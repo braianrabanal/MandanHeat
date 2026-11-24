@@ -1,4 +1,4 @@
-# Publica una versión nueva: actualiza el número, hace commit, crea la etiqueta y la sube.
+﻿# Publica una versión nueva: actualiza el número, hace commit, crea la etiqueta y la sube.
 # GitHub Actions compila el ejecutable y crea la Release automáticamente.
 # Uso:  powershell -ExecutionPolicy Bypass -File .\nueva-version.ps1 -Version 1.2.0
 param([Parameter(Mandatory = $true)][string]$Version)
@@ -23,9 +23,10 @@ $traces = git grep -niI -e $words[0] -e $words[1]
 if ($traces) { Write-Host "Revisa estas líneas antes de publicar:" -ForegroundColor Red; $traces; exit 1 }
 
 $csproj = "src\MandanHeat\MandanHeat.csproj"
-$content = Get-Content $csproj -Raw
+$utf8 = New-Object Text.UTF8Encoding($false)
+$content = [IO.File]::ReadAllText((Resolve-Path $csproj), $utf8)
 $content = [regex]::Replace($content, '<Version>[^<]*</Version>', "<Version>$Version</Version>")
-[IO.File]::WriteAllText((Resolve-Path $csproj), $content, (New-Object Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText((Resolve-Path $csproj), $content, $utf8)
 
 git add $csproj
 git commit -m "Versión $Version"

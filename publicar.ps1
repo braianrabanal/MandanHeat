@@ -1,4 +1,4 @@
-# Genera release\MandanHeat.exe: un único ejecutable que funciona sin instalar .NET.
+﻿# Genera release\MandanHeat.exe: un único ejecutable que funciona sin instalar .NET.
 # Uso:  powershell -ExecutionPolicy Bypass -File .\publicar.ps1 [-Version 1.2.0]
 param(
     [string]$Out = (Join-Path $PSScriptRoot "release"),
