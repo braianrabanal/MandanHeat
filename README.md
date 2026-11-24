@@ -13,9 +13,11 @@
   <a href="../../releases/latest"><b>⬇ Descargar la última versión</b></a>
 </p>
 
-![Ventana principal](docs/captura-principal.png)
+![Vista simple](docs/captura-principal.png)
 
 ## Características
+
+- **Vista simple** con las métricas básicas o las que elijas (★), y **vista completa** con todos los sensores de cada componente.
 
 - **Sensores de todo el equipo**:
   - **CPU**: temperatura (Tctl/Tdie y CCDs), uso por hilo y potencia.
@@ -35,6 +37,8 @@
 - **Bajo consumo**: con la ventana oculta no dibuja la interfaz, activa el modo eficiencia de Windows 11
   y solo lee los sensores que necesitan el overlay o el registro.
 - Sensores **renombrables y ocultables** (clic derecho sobre cualquiera).
+
+![Vista completa](docs/captura-completa.png)
 
 | Overlay | Ajustes |
 |---|---|
@@ -63,6 +67,8 @@
 | Iniciar o detener un registro | Botón «Grabar registro» o **Ctrl+Shift+F11** |
 | Mostrar u ocultar la ventana | **Ctrl+Shift+F9**, o doble clic en el icono de la bandeja |
 | Salir del todo | Clic derecho en el icono de la bandeja → **Salir** |
+| Cambiar entre la vista simple y la completa | Selector **SIMPLE / COMPLETA** arriba a la derecha |
+| Elegir qué se ve en la vista simple | ★ junto a cada sensor en la vista completa (clic derecho en una ficha para quitarla) |
 | Renombrar, ocultar o fijar un sensor en el overlay | Clic derecho sobre el sensor |
 
 Todos los atajos, el overlay, la fuente de FPS, la carpeta de registros y demás opciones se cambian en **⚙ Ajustes**.

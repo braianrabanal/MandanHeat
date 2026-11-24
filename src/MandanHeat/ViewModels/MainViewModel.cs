@@ -76,6 +76,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<HardwareVm> Hardware { get; } = new();
     public ObservableCollection<SummaryCard> Cards { get; }
     public ObservableCollection<OverlayLine> OverlayLines { get; } = new();
+    public ObservableCollection<SensorVm> SimpleSensors { get; } = new();
     public ObservableCollection<BannerVm> Banners { get; } = new();
     public ICommand ToggleLoggingCommand { get; }
     public ICommand OpenLogFolderCommand { get; }
@@ -100,6 +101,38 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         get => Settings.OverlayEnabled;
         set { if (Settings.OverlayEnabled == value) return; Settings.OverlayEnabled = value; Settings.Save(); OnPropertyChanged(); Wake(); }
     }
+
+    public bool IsSimpleView
+    {
+        get => Settings.SimpleView;
+        set
+        {
+            if (Settings.SimpleView == value) return;
+            Settings.SimpleView = value;
+            Settings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsFullView));
+            _forceRebuild = true;
+            Wake();
+        }
+    }
+
+    public bool IsFullView
+    {
+        get => !Settings.SimpleView;
+        set { if (value) IsSimpleView = false; }
+    }
+
+    public ICommand ResetSimpleViewCommand => new RelayCommand(() =>
+    {
+        Settings.SimpleSensorsConfigured = false;
+        Settings.SimpleSensors.Clear();
+        Settings.Save();
+        _forceRebuild = true;
+        Wake();
+    });
+
+    public ICommand AddMetricsCommand => new RelayCommand(() => IsSimpleView = false);
 
     public bool ShowAllSensors
     {
@@ -223,12 +256,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             _allHw = _hw.AllHardware();
             RefreshKeys();
-            if (ui) CheckStructure();
+            if (ui && Settings.SimpleView) RebuildSimple();
+            else if (ui) CheckStructure();
+            _forceRebuild = false;
             _lastStructureCheck = Stopwatch.GetTimestamp();
         }
         else if (ui)
         {
-            foreach (var vm in _sensorVms) vm.Update();
+            if (Settings.SimpleView) foreach (var vm in SimpleSensors) vm.Update();
+            else foreach (var vm in _sensorVms) vm.Update();
         }
 
         var fps = CurrentFps(fpsWanted, useDriverFps);
@@ -238,7 +274,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             UpdateCards(fps);
             UpdateBanners();
-            StatusText = $"Actualizado {DateTime.Now:HH:mm:ss} · {_sensorVms.Count} sensores · FPS: {FpsStatus(usePresentMon, useDriverFps)}" +
+            StatusText = $"Actualizado {DateTime.Now:HH:mm:ss} · {(Settings.SimpleView ? $"{SimpleSensors.Count} métricas en la vista simple" : $"{_sensorVms.Count} sensores")} · FPS: {FpsStatus(usePresentMon, useDriverFps)}" +
                          (logging ? $" · Registrando en {Path.GetFileName(_logger.FilePath)}" : "");
         }
 
@@ -298,7 +334,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             foreach (var vm in _sensorVms) vm.Update();
         }
-        _forceRebuild = false;
     }
 
     private void Rebuild(List<(IHardware Hw, List<ISensor> Sensors)> visible)
@@ -308,6 +343,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Hardware.Clear();
 
         var pinned = new HashSet<string>(Settings.PinnedSensors);
+        var favorites = new HashSet<string>(SimpleIds());
         foreach (var (hw, sensors) in visible)
         {
             var groups = sensors
@@ -316,7 +352,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 .Select(g =>
                 {
                     var vms = g.Select(s => new SensorVm(s, SensorNames.Display(s, Settings),
-                        pinned.Contains(s.Identifier.ToString()), RenameSensor, HideSensor)).ToList();
+                        pinned.Contains(s.Identifier.ToString()), RenameSensor, HideSensor,
+                        favorites.Contains(s.Identifier.ToString()), ToggleFavorite)).ToList();
                     _sensorVms.AddRange(vms);
                     return new SensorGroupVm(SensorFormat.GroupTitle(g.Key), vms);
                 })
@@ -325,6 +362,58 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         foreach (var vm in _sensorVms) vm.PropertyChanged += OnSensorPropertyChanged;
+    }
+
+    // ================================================================== Vista simple
+
+    /// <summary>Métricas de la vista simple: las elegidas por el usuario o, por defecto, las básicas.</summary>
+    private List<string> SimpleIds()
+    {
+        if (Settings.SimpleSensorsConfigured) return Settings.SimpleSensors;
+        var k = _keys;
+        var list = new List<ISensor?> { k.CpuTemp, k.CpuLoad, k.CpuPower, k.GpuTemp, k.GpuHotSpot, k.GpuLoad, k.GpuPower, k.GpuFan, k.Liquid, k.Pump };
+        list.AddRange(k.RadiatorFans);
+        list.Add(k.RamLoad);
+        return list.OfType<ISensor>().Select(s => s.Identifier.ToString()).Distinct().ToList();
+    }
+
+    private void RebuildSimple()
+    {
+        var byId = new Dictionary<string, ISensor>();
+        foreach (var s in _allHw.SelectMany(h => h.Sensors)) byId.TryAdd(s.Identifier.ToString(), s);
+        var pinned = new HashSet<string>(Settings.PinnedSensors);
+        var sensors = SimpleIds().Select(id => byId.GetValueOrDefault(id)).OfType<ISensor>().Where(SensorNames.IsPlausible).ToList();
+
+        if (sensors.Count == SimpleSensors.Count && sensors.Zip(SimpleSensors).All(p => ReferenceEquals(p.First, p.Second.Sensor)))
+        {
+            foreach (var vm in SimpleSensors) { vm.Name = SensorNames.Display(vm.Sensor, Settings); vm.Update(); }
+            return;
+        }
+        foreach (var vm in SimpleSensors) vm.PropertyChanged -= OnSensorPropertyChanged;
+        SimpleSensors.Clear();
+        foreach (var s in sensors)
+        {
+            var vm = new SensorVm(s, SensorNames.Display(s, Settings), pinned.Contains(s.Identifier.ToString()),
+                RenameSensor, HideSensor, favorite: true, ToggleFavorite);
+            vm.PropertyChanged += OnSensorPropertyChanged;
+            SimpleSensors.Add(vm);
+        }
+    }
+
+    /// <summary>Añade o quita un sensor de la vista simple (★ en la vista completa, clic derecho en la simple).</summary>
+    private void ToggleFavorite(SensorVm vm)
+    {
+        if (!Settings.SimpleSensorsConfigured)
+        {
+            Settings.SimpleSensors = SimpleIds().ToList();
+            Settings.SimpleSensorsConfigured = true;
+        }
+        bool add = !Settings.SimpleSensors.Contains(vm.Id);
+        if (add) Settings.SimpleSensors.Add(vm.Id); else Settings.SimpleSensors.Remove(vm.Id);
+        Settings.Save();
+        foreach (var other in _sensorVms.Where(x => x.Id == vm.Id)) other.IsFavorite = add;
+        vm.IsFavorite = add;
+        if (Settings.SimpleView) { _forceRebuild = true; Wake(); }
     }
 
     private void OnSensorPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -918,7 +1007,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private sealed class KeySensors
     {
         public ISensor? CpuTemp, CpuLoad, CpuPower;
-        public ISensor? GpuTemp, GpuHotSpot, GpuLoad, GpuPower, GpuFps;
+        public ISensor? GpuTemp, GpuHotSpot, GpuLoad, GpuPower, GpuFps, GpuFan;
         public ISensor? Liquid, Pump;
         public ISensor? RamLoad, RamUsed, RamAvailable;
         public List<ISensor> RadiatorFans = new();
@@ -943,6 +1032,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 k.GpuHotSpot = Pick(gpu, SensorType.Temperature, false, "GPU Hot Spot", "Hot Spot", "Hotspot", "Junction");
                 k.GpuLoad = Pick(gpu, SensorType.Load, true, "GPU Core", "D3D 3D");
                 k.GpuPower = Pick(gpu, SensorType.Power, true, "GPU Package", "GPU Total", "Board", "GPU Core");
+                k.GpuFan = Pick(gpu, SensorType.Fan, true, "GPU Fan");
                 k.GpuFps = gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Factor &&
                                                            s.Name.Contains("FPS", StringComparison.OrdinalIgnoreCase));
             }

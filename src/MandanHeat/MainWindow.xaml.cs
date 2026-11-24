@@ -49,6 +49,7 @@ public partial class MainWindow : Window
         _tray = new TrayIcon(ShowFromTray, ToggleOverlay, _vm.ToggleLogging, _vm.OpenLogFolder, ExitApp);
         bool devPreview = App.IsDevInstance && Environment.GetCommandLineArgs().Contains("--open-settings");
         if (devPreview) _vm.DevOverlayPreview = true;
+        if (App.IsDevInstance && Environment.GetCommandLineArgs().Contains("--full-view")) _vm.Settings.SimpleView = false; // sin guardar
         if (_startHidden || (_vm.Settings.StartMinimized && !devPreview))
         {
             new WindowInteropHelper(this).EnsureHandle();

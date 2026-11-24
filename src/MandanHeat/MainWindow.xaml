@@ -14,7 +14,7 @@
 
         <!-- Grupo de sensores (Temperaturas, Uso, Ventiladores...) dentro de una tarjeta de hardware -->
         <DataTemplate x:Key="GroupTemplate">
-            <StackPanel Width="378" Margin="0,0,22,16">
+            <StackPanel Width="400" Margin="0,0,22,16">
                 <DockPanel Margin="0,0,0,6">
                     <Polygon DockPanel.Dock="Left" Points="0,0 6,0 3,10 -3,10" Fill="{StaticResource FireVerticalBrush}"
                              VerticalAlignment="Center" Margin="3,0,8,0" />
@@ -24,18 +24,21 @@
                 </DockPanel>
                 <Grid Margin="0,0,0,3">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="22" />
                         <ColumnDefinition Width="24" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="92" />
                         <ColumnDefinition Width="66" />
                         <ColumnDefinition Width="66" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="OV" Style="{StaticResource SectionLabel}" FontSize="10"
+                    <TextBlock Grid.Column="0" Text="★" Style="{StaticResource SectionLabel}" FontSize="11"
+                               ToolTip="Marca la estrella para ver el sensor en la vista simple" />
+                    <TextBlock Grid.Column="1" Text="OV" Style="{StaticResource SectionLabel}" FontSize="10"
                                ToolTip="Marca la casilla para mostrar el sensor en el overlay" />
-                    <TextBlock Grid.Column="1" Text="SENSOR" Style="{StaticResource SectionLabel}" FontSize="10" />
-                    <TextBlock Grid.Column="2" Text="ACTUAL" Style="{StaticResource SectionLabel}" FontSize="10" HorizontalAlignment="Right" Margin="0" />
-                    <TextBlock Grid.Column="3" Text="MÍN" Style="{StaticResource SectionLabel}" FontSize="10" HorizontalAlignment="Right" Margin="0" />
-                    <TextBlock Grid.Column="4" Text="MÁX" Style="{StaticResource SectionLabel}" FontSize="10" HorizontalAlignment="Right" Margin="0" />
+                    <TextBlock Grid.Column="2" Text="SENSOR" Style="{StaticResource SectionLabel}" FontSize="10" />
+                    <TextBlock Grid.Column="3" Text="ACTUAL" Style="{StaticResource SectionLabel}" FontSize="10" HorizontalAlignment="Right" Margin="0" />
+                    <TextBlock Grid.Column="4" Text="MÍN" Style="{StaticResource SectionLabel}" FontSize="10" HorizontalAlignment="Right" Margin="0" />
+                    <TextBlock Grid.Column="5" Text="MÁX" Style="{StaticResource SectionLabel}" FontSize="10" HorizontalAlignment="Right" Margin="0" />
                 </Grid>
                 <ItemsControl ItemsSource="{Binding Sensors}">
                     <ItemsControl.ItemTemplate>
@@ -43,6 +46,7 @@
                             <Grid Margin="0,2" Background="Transparent">
                                 <Grid.ContextMenu>
                                     <ContextMenu>
+                                        <MenuItem Header="Mostrar en la vista simple" IsCheckable="True" IsChecked="{Binding IsFavorite, Mode=OneWay}" Command="{Binding ToggleFavoriteCommand}" />
                                         <MenuItem Header="Renombrar…" Command="{Binding RenameCommand}" />
                                         <MenuItem Header="Mostrar en el overlay" IsCheckable="True" IsChecked="{Binding IsPinned, Mode=OneWay}" Command="{Binding TogglePinCommand}" />
                                         <Separator />
@@ -50,17 +54,20 @@
                                     </ContextMenu>
                                 </Grid.ContextMenu>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22" />
                                     <ColumnDefinition Width="24" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="92" />
                                     <ColumnDefinition Width="66" />
                                     <ColumnDefinition Width="66" />
                                 </Grid.ColumnDefinitions>
-                                <CheckBox Grid.Column="0" Style="{StaticResource PinBox}"
+                                <CheckBox Grid.Column="0" Style="{StaticResource StarBox}" IsChecked="{Binding IsFavorite, Mode=OneWay}"
+                                          Command="{Binding ToggleFavoriteCommand}" ToolTip="Mostrar en la vista simple" />
+                                <CheckBox Grid.Column="1" Style="{StaticResource PinBox}"
                                           IsChecked="{Binding IsPinned, Mode=TwoWay}" ToolTip="Mostrar en el overlay" />
-                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                <TextBlock Grid.Column="2" Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
                                            ToolTip="{Binding Name}" VerticalAlignment="Center" Foreground="#D9DAE0" />
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="3" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Value}" Foreground="{Binding ValueBrush}" FontSize="14"
                                                FontFamily="{StaticResource DisplayFont}" FontStretch="SemiCondensed" FontWeight="Bold"
                                                HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
@@ -68,9 +75,9 @@
                                                  Value="{Binding Percent, Mode=OneWay}"
                                                  Visibility="{Binding ShowBar, Converter={StaticResource BoolToVis}}" />
                                 </StackPanel>
-                                <TextBlock Grid.Column="3" Text="{Binding Min}" Style="{StaticResource Muted}"
+                                <TextBlock Grid.Column="4" Text="{Binding Min}" Style="{StaticResource Muted}"
                                            HorizontalAlignment="Right" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
-                                <TextBlock Grid.Column="4" Text="{Binding Max}" Style="{StaticResource Muted}"
+                                <TextBlock Grid.Column="5" Text="{Binding Max}" Style="{StaticResource Muted}"
                                            HorizontalAlignment="Right" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
                             </Grid>
                         </DataTemplate>
@@ -115,8 +122,14 @@
                 </StackPanel>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                <CheckBox Content="Todos los sensores" IsChecked="{Binding ShowAllSensors}"
+                <CheckBox Content="Todos los sensores" IsChecked="{Binding ShowAllSensors}" Margin="0,0,18,0"
+                          Visibility="{Binding IsFullView, Converter={StaticResource BoolToVis}}"
                           ToolTip="Muestra también frecuencias, voltajes, datos, etc." />
+                <TextBlock Text="VISTA" Style="{StaticResource SectionLabel}" />
+                <RadioButton Style="{StaticResource Pill}" GroupName="View" Content="SIMPLE" IsChecked="{Binding IsSimpleView}"
+                             ToolTip="Solo las métricas básicas o las que elijas con ★" />
+                <RadioButton Style="{StaticResource Pill}" GroupName="View" Content="COMPLETA" IsChecked="{Binding IsFullView}"
+                             ToolTip="Todos los sensores de cada componente" />
             </StackPanel>
         </DockPanel>
 
@@ -190,41 +203,108 @@
             </DockPanel>
         </Border>
 
+        <Grid Grid.Row="4">
         <!-- ================= Sensores por componente ================= -->
-        <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <ItemsControl ItemsSource="{Binding Hardware}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Margin="0,0,6,12">
-                            <Border Style="{StaticResource Card}" Padding="20,14,16,4">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                        <Grid VerticalAlignment="Center">
-                                            <Border Background="{StaticResource FireBrush}" RenderTransformOrigin="0.5,0.5">
-                                                <Border.RenderTransform><SkewTransform AngleX="-14" /></Border.RenderTransform>
-                                            </Border>
-                                            <TextBlock Text="{Binding Badge}" FontFamily="{StaticResource DisplayFont}" FontStretch="SemiCondensed"
-                                                       FontSize="11" FontWeight="Bold" Foreground="#120604" Margin="9,2" />
-                                        </Grid>
-                                        <TextBlock Text="{Binding Name}" FontFamily="{StaticResource DisplayFont}" FontStretch="SemiCondensed"
-                                                   FontSize="19" FontWeight="Bold" Margin="12,0,0,0" VerticalAlignment="Center" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding IsFullView, Converter={StaticResource BoolToVis}}">
+                <ItemsControl ItemsSource="{Binding Hardware}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,6,12">
+                                <Border Style="{StaticResource Card}" Padding="20,14,16,4">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                            <Grid VerticalAlignment="Center">
+                                                <Border Background="{StaticResource FireBrush}" RenderTransformOrigin="0.5,0.5">
+                                                    <Border.RenderTransform><SkewTransform AngleX="-14" /></Border.RenderTransform>
+                                                </Border>
+                                                <TextBlock Text="{Binding Badge}" FontFamily="{StaticResource DisplayFont}" FontStretch="SemiCondensed"
+                                                           FontSize="11" FontWeight="Bold" Foreground="#120604" Margin="9,2" />
+                                            </Grid>
+                                            <TextBlock Text="{Binding Name}" FontFamily="{StaticResource DisplayFont}" FontStretch="SemiCondensed"
+                                                       FontSize="19" FontWeight="Bold" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{Binding Groups}" ItemTemplate="{StaticResource GroupTemplate}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
                                     </StackPanel>
-                                    <ItemsControl ItemsSource="{Binding Groups}" ItemTemplate="{StaticResource GroupTemplate}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                    </ItemsControl>
-                                </StackPanel>
-                            </Border>
-                            <!-- Barra vertical de fuego a la izquierda -->
-                            <Border Width="3" HorizontalAlignment="Left" Margin="1" Background="{StaticResource FireVerticalBrush}" CornerRadius="3,0,0,3" />
-                        </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                                </Border>
+                                <!-- Barra vertical de fuego a la izquierda -->
+                                <Border Width="3" HorizontalAlignment="Left" Margin="1" Background="{StaticResource FireVerticalBrush}" CornerRadius="3,0,0,3" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+        <!-- ================= Vista simple ================= -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding IsSimpleView, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <DockPanel Margin="0,2,0,10" LastChildFill="False">
+                        <Polygon DockPanel.Dock="Left" Points="0,0 7,0 3.5,12 -3.5,12" Fill="{StaticResource FireVerticalBrush}"
+                                 VerticalAlignment="Center" Margin="4,0,10,0" />
+                        <TextBlock DockPanel.Dock="Left" Text="MIS MÉTRICAS" FontFamily="{StaticResource DisplayFont}" FontStretch="SemiCondensed"
+                                   FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                        <TextBlock DockPanel.Dock="Left" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="14,2,0,0"
+                                   Text="Clic derecho en una ficha para quitarla · añade más con ★ en la vista completa" />
+                        <Button DockPanel.Dock="Right" Content="RESTABLECER" Command="{Binding ResetSimpleViewCommand}" Margin="8,0,0,0"
+                                ToolTip="Volver a las métricas básicas" />
+                        <Button DockPanel.Dock="Right" Content="＋ AÑADIR MÉTRICAS" Command="{Binding AddMetricsCommand}"
+                                Style="{StaticResource AccentButton}" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding SimpleSensors}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Width="272" Margin="0,0,12,12">
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Quitar de la vista simple" Command="{Binding ToggleFavoriteCommand}" />
+                                            <MenuItem Header="Renombrar…" Command="{Binding RenameCommand}" />
+                                            <MenuItem Header="Mostrar en el overlay" IsCheckable="True" IsChecked="{Binding IsPinned, Mode=OneWay}" Command="{Binding TogglePinCommand}" />
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
+                                    <Border Style="{StaticResource Card}" Padding="14,12,14,10">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <Grid DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                    <Border Background="{StaticResource FireBrush}" RenderTransformOrigin="0.5,0.5">
+                                                        <Border.RenderTransform><SkewTransform AngleX="-14" /></Border.RenderTransform>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding Badge}" FontFamily="{StaticResource DisplayFont}" FontStretch="SemiCondensed"
+                                                               FontSize="9" FontWeight="Bold" Foreground="#120604" Margin="6,1" />
+                                                </Grid>
+                                                <TextBlock Text="{Binding Name}" Foreground="#C7C9D1" FontSize="12" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" VerticalAlignment="Center" />
+                                            </DockPanel>
+                                            <TextBlock Text="{Binding Value}" Foreground="{Binding ValueBrush}" FontSize="32" Margin="0,4,0,2"
+                                                       FontFamily="{StaticResource DisplayFont}" FontStretch="Condensed" FontWeight="Bold"
+                                                       Typography.NumeralAlignment="Tabular" />
+                                            <ProgressBar Style="{StaticResource FireBar}" Margin="0,0,0,6" Value="{Binding Percent, Mode=OneWay}"
+                                                         Visibility="{Binding ShowBar, Converter={StaticResource BoolToVis}}" />
+                                            <TextBlock Style="{StaticResource Muted}" FontSize="11">
+                                                <Run Text="mín" /> <Run Text="{Binding Min, Mode=OneWay}" Foreground="#B5B8C2" />
+                                                <Run Text="  ·  máx" /> <Run Text="{Binding Max, Mode=OneWay}" Foreground="#B5B8C2" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Style="{StaticResource FireStripe}" Margin="1,1,1,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
 
         <!-- ================= Barra de estado ================= -->
         <TextBlock Grid.Row="5" Text="{Binding StatusText}" Style="{StaticResource Muted}" Margin="2,8,0,0"

@@ -14,8 +14,10 @@ public sealed class SensorVm : ObservableObject
     private Brush _valueBrush = Palette.Text;
     private double _percent;
     private bool _isPinned;
+    private bool _isFavorite;
 
-    public SensorVm(ISensor sensor, string name, bool pinned, Action<SensorVm> rename, Action<SensorVm> hide)
+    public SensorVm(ISensor sensor, string name, bool pinned, Action<SensorVm> rename, Action<SensorVm> hide,
+                    bool favorite = false, Action<SensorVm>? toggleFavorite = null)
     {
         Sensor = sensor;
         Id = sensor.Identifier.ToString();
@@ -23,6 +25,9 @@ public sealed class SensorVm : ObservableObject
         Type = sensor.SensorType;
         IsLiquid = IsLiquidSensor(sensor);
         _isPinned = pinned;
+        _isFavorite = favorite;
+        Badge = SensorFormat.Badge(sensor.Hardware.HardwareType);
+        ToggleFavoriteCommand = new RelayCommand(() => toggleFavorite?.Invoke(this));
         RenameCommand = new RelayCommand(() => rename(this));
         HideCommand = new RelayCommand(() => hide(this));
         TogglePinCommand = new RelayCommand(() => IsPinned = !IsPinned);
@@ -44,6 +49,8 @@ public sealed class SensorVm : ObservableObject
     public ICommand RenameCommand { get; }
     public ICommand HideCommand { get; }
     public ICommand TogglePinCommand { get; }
+    public ICommand ToggleFavoriteCommand { get; }
+    public string Badge { get; }
 
     public string Name { get => _name; set => Set(ref _name, value); }
     public string Value { get => _value; private set => Set(ref _value, value); }
@@ -52,6 +59,8 @@ public sealed class SensorVm : ObservableObject
     public Brush ValueBrush { get => _valueBrush; private set => Set(ref _valueBrush, value); }
     public double Percent { get => _percent; private set => Set(ref _percent, value); }
     public bool IsPinned { get => _isPinned; set => Set(ref _isPinned, value); }
+    /// <summary>Aparece en la vista simple.</summary>
+    public bool IsFavorite { get => _isFavorite; set => Set(ref _isFavorite, value); }
 
     public void Update()
     {
