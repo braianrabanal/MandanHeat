@@ -1,9 +1,15 @@
 # Genera release\MandanHeat.exe: un único ejecutable que funciona sin instalar .NET.
-# Uso:  powershell -ExecutionPolicy Bypass -File .\publicar.ps1
-param([string]$Out = (Join-Path $PSScriptRoot "release"))
+# Uso:  powershell -ExecutionPolicy Bypass -File .\publicar.ps1 [-Version 1.2.0]
+param(
+    [string]$Out = (Join-Path $PSScriptRoot "release"),
+    [string]$Version = ""
+)
 
 $ErrorActionPreference = "Stop"
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
+
+$extra = @()
+if ($Version) { $extra += "-p:Version=$Version" }
 
 dotnet publish (Join-Path $PSScriptRoot "src\MandanHeat") `
     -c Release -r win-x64 --self-contained true `
@@ -11,7 +17,9 @@ dotnet publish (Join-Path $PSScriptRoot "src\MandanHeat") `
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:EnableCompressionInSingleFile=true `
     -p:DebugType=none `
+    @extra `
     -o $Out
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish falló ($LASTEXITCODE)" }
 
 $exe = Join-Path $Out "MandanHeat.exe"
 $zip = Join-Path $Out "MandanHeat-win-x64.zip"
