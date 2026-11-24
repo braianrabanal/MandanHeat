@@ -35,6 +35,10 @@ public sealed class AppSettings
     public bool CloseHintShown { get; set; }
     public bool StartMinimized { get; set; }
     public bool ShowAllSensors { get; set; }
+    /// <summary>Vista simple (tarjetas + métricas elegidas) en lugar de la lista completa.</summary>
+    public bool SimpleView { get; set; } = true;
+    public bool SimpleSensorsConfigured { get; set; }
+    public List<string> SimpleSensors { get; set; } = new();
 
     // ---- Atajos ("" = desactivado)
     public string OverlayHotkey { get; set; } = "Ctrl+Shift+F10";
