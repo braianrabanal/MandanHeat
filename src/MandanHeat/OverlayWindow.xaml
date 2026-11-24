@@ -1,0 +1,68 @@
+<Window x:Class="MandanHeat.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MandanHeat Overlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Focusable="False"
+        IsHitTestVisible="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="Manual"
+        Left="14" Top="14"
+        FontFamily="Bahnschrift" FontStretch="SemiCondensed"
+        TextOptions.TextFormattingMode="Display">
+    <Border Background="{Binding OverlayBackground}" CornerRadius="2" Padding="12,6,12,7" BorderThickness="3,0,0,0">
+        <Border.BorderBrush>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#FFB300" Offset="0" />
+                <GradientStop Color="#FF5A00" Offset="0.5" />
+                <GradientStop Color="#FF1E3C" Offset="1" />
+            </LinearGradientBrush>
+        </Border.BorderBrush>
+        <Border.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding OverlayScale}" ScaleY="{Binding OverlayScale}" />
+        </Border.LayoutTransform>
+        <StackPanel Grid.IsSharedSizeScope="True">
+            <!-- Sin efectos (sombras) a propósito: en una ventana transparente cada efecto obliga a re-renderizar más. -->
+            <DockPanel Margin="0,0,0,3" LastChildFill="True">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding OverlayRec}" Foreground="#FF1E3C" FontSize="12" FontWeight="Bold"
+                           Margin="10,0,0,0" Visibility="{Binding HasOverlayRec, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Text="{Binding OverlayTitle}" Foreground="#E6E7EC" FontSize="12" FontWeight="Bold"
+                           TextTrimming="CharacterEllipsis" MaxWidth="260" />
+            </DockPanel>
+            <ItemsControl ItemsSource="{Binding OverlayLines}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Label}" Foreground="{Binding LabelBrush}" FontSize="14"
+                                       FontWeight="Bold" Margin="0,0,12,0" VerticalAlignment="Center" />
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding Segments}" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" FontSize="16"
+                                                   FontWeight="SemiBold" Margin="0,0,12,0"
+                                                   Typography.NumeralAlignment="Tabular" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</Window>
