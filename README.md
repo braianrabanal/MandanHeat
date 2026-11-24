@@ -90,6 +90,10 @@ dotnet run --project src\MandanHeat
 
 # Generar el ejecutable único (release\MandanHeat.exe y el .zip)
 powershell -ExecutionPolicy Bypass -File .\publicar.ps1
+
+# Publicar una versión nueva: GitHub Actions compila y crea la Release solo
+powershell -ExecutionPolicy Bypass -File .
+ueva-version.ps1 -Version 1.2.0
 ```
 
 Tecnología: C# / WPF (.NET 10), [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
