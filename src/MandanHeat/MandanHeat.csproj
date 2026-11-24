@@ -15,12 +15,12 @@
     <AssemblyName>MandanHeat</AssemblyName>
     <RootNamespace>MandanHeat</RootNamespace>
     <Product>MandanHeat</Product>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <!-- Bajo consumo: GC sin hilo en segundo plano y que priorice usar poca memoria -->
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <TieredPGO>true</TieredPGO>
-    <!-- SYSLIB1054: DllImport es suficiente aquí. WFO0003: WPF necesita el DPI en el manifiesto. -->
+    <!-- SYSLIB1054: DllImport es suficiente aquÃ­. WFO0003: WPF necesita el DPI en el manifiesto. -->
     <NoWarn>$(NoWarn);SYSLIB1054;CA1416;WFO0003</NoWarn>
   </PropertyGroup>
 
