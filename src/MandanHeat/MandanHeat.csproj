@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\MandanHeat.ico</ApplicationIcon>
+    <AssemblyName>MandanHeat</AssemblyName>
+    <RootNamespace>MandanHeat</RootNamespace>
+    <Product>MandanHeat</Product>
+    <Version>1.1.0</Version>
+    <!-- Bajo consumo: GC sin hilo en segundo plano y que priorice usar poca memoria -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+    <!-- SYSLIB1054: DllImport es suficiente aquí. WFO0003: WPF necesita el DPI en el manifiesto. -->
+    <NoWarn>$(NoWarn);SYSLIB1054;CA1416;WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="7" />
+    <RuntimeHostConfigurationOption Include="System.GC.RetainVM" Value="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\MandanHeat.ico" />
+    <Resource Include="Assets\MandanHeat.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+  </ItemGroup>
+
+  <!-- Si pones PresentMon*.exe en la carpeta tools/ del repositorio, se copia junto al .exe -->
+  <ItemGroup>
+    <None Include="..\..\tools\PresentMon*.exe" LinkBase="tools" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
