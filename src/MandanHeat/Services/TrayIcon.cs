@@ -14,12 +14,12 @@ public sealed class TrayIcon : IDisposable
     public TrayIcon(Action show, Action toggleOverlay, Action toggleLogging, Action openLogs, Action exit)
     {
         var menu = new WinForms.ContextMenuStrip();
-        menu.Items.Add("Abrir MandanHeat", null, (_, _) => show());
-        menu.Items.Add("Activar / desactivar overlay", null, (_, _) => toggleOverlay());
-        menu.Items.Add("Iniciar / detener registro", null, (_, _) => toggleLogging());
-        menu.Items.Add("Abrir carpeta de registros", null, (_, _) => openLogs());
+        menu.Items.Add(Loc.T("Abrir MandanHeat"), null, (_, _) => show());
+        menu.Items.Add(Loc.T("Activar / desactivar overlay"), null, (_, _) => toggleOverlay());
+        menu.Items.Add(Loc.T("Iniciar / detener registro"), null, (_, _) => toggleLogging());
+        menu.Items.Add(Loc.T("Abrir carpeta de registros"), null, (_, _) => openLogs());
         menu.Items.Add(new WinForms.ToolStripSeparator());
-        menu.Items.Add("Salir", null, (_, _) => exit());
+        menu.Items.Add(Loc.T("Salir"), null, (_, _) => exit());
 
         _icon = new WinForms.NotifyIcon
         {

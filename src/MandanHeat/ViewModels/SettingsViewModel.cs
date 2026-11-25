@@ -33,7 +33,7 @@ public sealed class SettingsViewModel : ObservableObject
         BrowseLogFolderCommand = new RelayCommand(BrowseLogFolder);
         OpenLogFolderCommand = new RelayCommand(_main.OpenLogFolder);
         ExportDiagnosticsCommand = new RelayCommand(ExportDiagnostics);
-        ReopenSensorsCommand = new RelayCommand(() => { _main.ReopenSensors(); DiagnosticText = "Sensores reiniciados."; });
+        ReopenSensorsCommand = new RelayCommand(() => { _main.ReopenSensors(); DiagnosticText = Loc.T("Sensores reiniciados."); });
         ResetNamesCommand = new RelayCommand(() => { _s.CustomNames.Clear(); Changed("Sensors"); OnPropertyChanged(nameof(CustomNamesText)); });
         ShowHiddenCommand = new RelayCommand(() => { _s.HiddenSensors.Clear(); Changed("Sensors"); OnPropertyChanged(nameof(HiddenText)); });
         ResetRadiatorCommand = new RelayCommand(() =>
@@ -88,6 +88,19 @@ public sealed class SettingsViewModel : ObservableObject
     public bool StartMinimized { get => _s.StartMinimized; set => SetBool(() => _s.StartMinimized, v => _s.StartMinimized = v, value, nameof(AppSettings.StartMinimized)); }
     public bool CloseToTray { get => _s.CloseToTray; set => SetBool(() => _s.CloseToTray, v => _s.CloseToTray = v, value, nameof(AppSettings.CloseToTray)); }
     public bool MinimizeToTray { get => _s.MinimizeToTray; set => SetBool(() => _s.MinimizeToTray, v => _s.MinimizeToTray = v, value, nameof(AppSettings.MinimizeToTray)); }
+
+    public bool LangAuto { get => _s.Language == ""; set { if (value) SetLanguage(""); } }
+    public bool LangEs { get => _s.Language == "es"; set { if (value) SetLanguage("es"); } }
+    public bool LangEn { get => _s.Language == "en"; set { if (value) SetLanguage("en"); } }
+
+    private void SetLanguage(string lang)
+    {
+        _s.Language = lang;
+        Loc.Apply(lang);
+        OnPropertyChanged(nameof(LangAuto)); OnPropertyChanged(nameof(LangEs)); OnPropertyChanged(nameof(LangEn));
+        OnPropertyChanged(nameof(CustomNamesText)); OnPropertyChanged(nameof(HiddenText));
+        Changed(nameof(AppSettings.Language));
+    }
 
     public bool Ui500 { get => _s.UpdateIntervalMs == 500; set { if (value) SetUi(500); } }
     public bool Ui1000 { get => _s.UpdateIntervalMs == 1000; set { if (value) SetUi(1000); } }
@@ -199,7 +212,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Title = "Carpeta donde guardar los registros",
+            Title = Loc.T("Carpeta donde guardar los registros"),
             InitialDirectory = Directory.Exists(_s.LogFolder) ? _s.LogFolder : AppSettings.DefaultLogFolder(),
         };
         if (dialog.ShowDialog() == true) LogFolder = dialog.FolderName;
@@ -214,8 +227,8 @@ public sealed class SettingsViewModel : ObservableObject
         Changed("Radiator");
     }
 
-    public string CustomNamesText => $"Restablecer nombres personalizados ({_s.CustomNames.Count})";
-    public string HiddenText => $"Mostrar sensores ocultos ({_s.HiddenSensors.Count})";
+    public string CustomNamesText => Loc.F("Restablecer nombres personalizados ({0})", _s.CustomNames.Count);
+    public string HiddenText => Loc.F("Mostrar sensores ocultos ({0})", _s.HiddenSensors.Count);
     public bool ShowAllSensors { get => _main.ShowAllSensors; set { _main.ShowAllSensors = value; OnPropertyChanged(); } }
 
     // ------------------------------------------------------------------ Diagnóstico
@@ -227,7 +240,7 @@ public sealed class SettingsViewModel : ObservableObject
         try
         {
             var path = _main.ExportDiagnostics();
-            DiagnosticText = $"Guardado: {path}";
+            DiagnosticText = Loc.F("Guardado: {0}", path);
             Process.Start("explorer.exe", $"/select,\"{path}\"");
         }
         catch (Exception ex)

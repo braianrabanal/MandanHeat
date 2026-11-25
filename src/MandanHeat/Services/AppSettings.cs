@@ -33,6 +33,8 @@ public sealed class AppSettings
     public bool MinimizeToTray { get; set; } = true;
     public bool CloseToTray { get; set; } = true;
     public bool CloseHintShown { get; set; }
+    /// <summary>Idioma de la interfaz: "" = automático (el de Windows), "es" o "en".</summary>
+    public string Language { get; set; } = "";
     public bool StartMinimized { get; set; }
     public bool ShowAllSensors { get; set; }
     /// <summary>Vista simple (tarjetas + métricas elegidas) en lugar de la lista completa.</summary>

@@ -23,12 +23,12 @@ public sealed class HotkeyBox : TextBox
         IsReadOnly = true;
         IsReadOnlyCaretVisible = false;
         Cursor = Cursors.Hand;
-        ToolTip = "Haz clic y pulsa la combinación (p. ej. Ctrl+Shift+F10). Retroceso para desactivar.";
-        GotKeyboardFocus += (_, _) => Text = "Pulsa la combinación…";
+        ToolTip = Loc.T("Haz clic y pulsa la combinación (p. ej. Ctrl+Shift+F10). Retroceso para desactivar.");
+        GotKeyboardFocus += (_, _) => Text = Loc.T("Pulsa la combinación…");
         LostKeyboardFocus += (_, _) => Refresh();
     }
 
-    private void Refresh() => Text = string.IsNullOrEmpty(Hotkey) ? "(desactivado)" : Hotkey;
+    private void Refresh() => Text = string.IsNullOrEmpty(Hotkey) ? Loc.T("(desactivado)") : Hotkey;
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
@@ -50,7 +50,7 @@ public sealed class HotkeyBox : TextBox
         bool isFunctionKey = key >= Key.F1 && key <= Key.F24;
         if (mods == ModifierKeys.None && !isFunctionKey)
         {
-            Text = "Usa Ctrl, Alt o Shift + tecla (o una tecla F)";
+            Text = Loc.T("Usa Ctrl, Alt o Shift + tecla (o una tecla F)");
             return;
         }
 

@@ -27,7 +27,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         _startHidden = startHidden;
 
-        _vm = new MainViewModel(AppSettings.Load());
+        var settings = AppSettings.Load();
+        Loc.Apply(settings.Language);
+        _vm = new MainViewModel(settings);
         DataContext = _vm;
         _overlay = new OverlayWindow { DataContext = _vm };
 
@@ -44,9 +46,16 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(Start);
     }
 
-    private async void Start()
+    private void CreateTray()
     {
         _tray = new TrayIcon(ShowFromTray, ToggleOverlay, _vm.ToggleLogging, _vm.OpenLogFolder, ExitApp);
+        _tray.SetTooltip(_vm.TrayTooltip);
+    }
+
+    private async void Start()
+    {
+        CreateTray();
+        Loc.LanguageChanged += () => { _tray?.Dispose(); CreateTray(); };
         bool devPreview = App.IsDevInstance && Environment.GetCommandLineArgs().Contains("--open-settings");
         if (devPreview) _vm.DevOverlayPreview = true;
         if (App.IsDevInstance && Environment.GetCommandLineArgs().Contains("--full-view")) _vm.Settings.SimpleView = false; // sin guardar
@@ -87,7 +96,7 @@ public partial class MainWindow : Window
         if (!_hotkeys.Register(s.WindowHotkey, ToggleWindow)) failed.Add(s.WindowHotkey);
         if (failed.Count > 0 && showErrors)
             MessageBox.Show(this,
-                $"No se pudo registrar: {string.Join(", ", failed)}.\nPuede que otra app ya use esa combinación. Cámbiala en Ajustes.",
+                Loc.F("No se pudo registrar: {0}.", string.Join(", ", failed)) + "\n" + Loc.T("Puede que otra app ya use esa combinación. Cámbiala en Ajustes."),
                 "MandanHeat", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
@@ -179,8 +188,8 @@ public partial class MainWindow : Window
         {
             _vm.Settings.CloseHintShown = true;
             _vm.Settings.Save();
-            _tray?.ShowBalloon("MandanHeat sigue funcionando",
-                "Está en la bandeja, junto al reloj. Doble clic para abrirla; clic derecho → Salir para cerrarla.");
+            _tray?.ShowBalloon(Loc.T("MandanHeat sigue funcionando"),
+                Loc.T("Está en la bandeja, junto al reloj. Doble clic para abrirla; clic derecho → Salir para cerrarla."));
         }
     }
 
