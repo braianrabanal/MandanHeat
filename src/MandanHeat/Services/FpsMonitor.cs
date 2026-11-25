@@ -136,7 +136,7 @@ public sealed class FpsMonitor : IDisposable
         {
             if (!ReferenceEquals(_process, p)) return;
             State = FpsState.Error;
-            StatusMessage = _lastError != null ? $"PresentMon se detuvo: {_lastError}" : "PresentMon se detuvo";
+            StatusMessage = _lastError != null ? Loc.F("PresentMon se detuvo: {0}", _lastError) : Loc.T("PresentMon se detuvo");
         };
 
         _process = p;
@@ -148,7 +148,7 @@ public sealed class FpsMonitor : IDisposable
         {
             _process = null;
             State = FpsState.Error;
-            StatusMessage = $"No se pudo iniciar PresentMon: {ex.Message}";
+            StatusMessage = Loc.F("No se pudo iniciar PresentMon: {0}", ex.Message);
             return false;
         }
 
@@ -156,7 +156,7 @@ public sealed class FpsMonitor : IDisposable
         p.BeginOutputReadLine();
         p.BeginErrorReadLine();
         State = FpsState.Running;
-        StatusMessage = "PresentMon activo";
+        StatusMessage = Loc.T("PresentMon activo");
         return true;
     }
 
@@ -241,7 +241,7 @@ public sealed class FpsMonitor : IDisposable
         if (!_headerParsed)
         {
             State = FpsState.Error;
-            StatusMessage = "Formato de PresentMon no reconocido";
+            StatusMessage = Loc.T("Formato de PresentMon no reconocido");
         }
     }
 

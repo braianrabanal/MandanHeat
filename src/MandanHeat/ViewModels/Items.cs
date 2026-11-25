@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Windows.Media;
 using LibreHardwareMonitor.Hardware;
+using MandanHeat.Services;
 
 namespace MandanHeat.ViewModels;
 
@@ -103,7 +104,8 @@ public sealed class SummaryCard(string title) : ObservableObject
     private string _value = "—", _unit = "", _detail = "";
     private Brush _brush = Palette.Text;
 
-    public string Title { get; } = title;
+    public string Title => Loc.T(title);
+    public void RefreshTitle() => OnPropertyChanged(nameof(Title));
     public string Value { get => _value; set => Set(ref _value, value); }
     public string Unit { get => _unit; set => Set(ref _unit, value); }
     public string Detail { get => _detail; set => Set(ref _detail, value); }

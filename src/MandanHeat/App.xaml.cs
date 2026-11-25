@@ -17,6 +17,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Loc.Apply(AppSettings.Load().Language);
         DispatcherUnhandledException += OnUnhandledException;
         SessionEnding += (_, _) => IsShuttingDown = true;
 
@@ -96,7 +97,7 @@ public partial class App : Application
 
         if (!IsDevInstance && !AcquireSingleInstance())
         {
-            MessageBox.Show("MandanHeat ya está abierto (mira en la bandeja del sistema, junto al reloj).",
+            MessageBox.Show(Loc.T("MandanHeat ya está abierto (mira en la bandeja del sistema, junto al reloj)."),
                 "MandanHeat", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
@@ -166,7 +167,7 @@ public partial class App : Application
             File.AppendAllText(Path.Combine(AppSettings.Folder, "error.log"), $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {e.Exception}\n\n");
         }
         catch { }
-        MessageBox.Show($"Error inesperado:\n{e.Exception.Message}\n\nDetalles en %AppData%\\MandanHeat\\error.log",
+        MessageBox.Show(Loc.T("Error inesperado:") + $"\n{e.Exception.Message}\n\n" + Loc.T("Detalles en") + " %AppData%\\MandanHeat\\error.log",
             "MandanHeat", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }

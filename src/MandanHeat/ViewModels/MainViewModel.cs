@@ -49,7 +49,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private int _autoLogPid, _autoCandidatePid;
     private long _autoCandidateSince, _autoLostSince;
 
-    private string _statusText = "Iniciando sensores…";
+    private string _statusText = Loc.T("Iniciando sensores…");
     private string _overlayTitle = "MandanHeat";
     private string _overlayRec = "";
     private Brush _overlayBackground = Brushes.Transparent;
@@ -70,6 +70,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ToggleLoggingCommand = new RelayCommand(ToggleLogging);
         OpenLogFolderCommand = new RelayCommand(OpenLogFolder);
         UpdateOverlayBackground();
+        Loc.LanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged()
+    {
+        foreach (var c in Cards) c.RefreshTitle();
+        _forceRebuild = true;
+        OnPropertyChanged(nameof(LogButtonText));
     }
 
     public AppSettings Settings { get; }
@@ -91,8 +99,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public bool IsLogging => _logger.IsActive;
     public string LogButtonText => _logger.IsActive
-        ? $"■  DETENER  {_logger.Elapsed:hh\\:mm\\:ss}"
-        : "●  GRABAR REGISTRO";
+        ? Loc.T("■  DETENER") + $"  {_logger.Elapsed:hh\\:mm\\:ss}"
+        : Loc.T("●  GRABAR REGISTRO");
     public string OverlayHotkeyText => string.IsNullOrEmpty(Settings.OverlayHotkey) ? "" : $"({Settings.OverlayHotkey})";
     public string LogHotkeyText => string.IsNullOrEmpty(Settings.LogHotkey) ? "" : Settings.LogHotkey;
 
@@ -200,7 +208,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            StatusText = $"Error al abrir los sensores: {ex.Message}";
+            StatusText = Loc.F("Error al abrir los sensores: {0}", ex.Message);
         }
 
         while (!ct.IsCancellationRequested)
@@ -213,7 +221,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
             {
-                StatusText = $"Error leyendo sensores: {ex.Message}";
+                StatusText = Loc.F("Error leyendo sensores: {0}", ex.Message);
                 delay = 2000;
             }
 
@@ -274,8 +282,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             UpdateCards(fps);
             UpdateBanners();
-            StatusText = $"Actualizado {DateTime.Now:HH:mm:ss} · {(Settings.SimpleView ? $"{SimpleSensors.Count} métricas en la vista simple" : $"{_sensorVms.Count} sensores")} · FPS: {FpsStatus(usePresentMon, useDriverFps)}" +
-                         (logging ? $" · Registrando en {Path.GetFileName(_logger.FilePath)}" : "");
+            StatusText = Loc.F("Actualizado {0:HH:mm:ss}", DateTime.Now) + " · " +
+                         (Settings.SimpleView ? Loc.F("{0} métricas en la vista simple", SimpleSensors.Count) : Loc.F("{0} sensores", _sensorVms.Count)) +
+                         " · FPS: " + FpsStatus(usePresentMon, useDriverFps) +
+                         (logging ? " · " + Loc.F("Registrando en {0}", Path.GetFileName(_logger.FilePath)) : "");
         }
 
         HandleLogging(fps);
@@ -299,9 +309,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private string FpsStatus(bool presentMon, bool driver)
     {
-        if (Settings.FpsSource == FpsSource.Off) return "desactivados";
-        if (presentMon && _fps.IsRunning) return driver ? "PresentMon (+ driver de respaldo)" : "PresentMon";
-        if (driver) return "contador del driver de la GPU";
+        if (Settings.FpsSource == FpsSource.Off) return Loc.T("desactivados");
+        if (presentMon && _fps.IsRunning) return driver ? Loc.T("PresentMon (+ driver de respaldo)") : "PresentMon";
+        if (driver) return Loc.T("contador del driver de la GPU");
         return _fps.StatusMessage;
     }
 
@@ -355,7 +365,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                         pinned.Contains(s.Identifier.ToString()), RenameSensor, HideSensor,
                         favorites.Contains(s.Identifier.ToString()), ToggleFavorite)).ToList();
                     _sensorVms.AddRange(vms);
-                    return new SensorGroupVm(SensorFormat.GroupTitle(g.Key), vms);
+                    return new SensorGroupVm(Loc.T(SensorFormat.GroupTitle(g.Key)), vms);
                 })
                 .ToList();
             Hardware.Add(new HardwareVm(SensorNames.HardwareName(hw), SensorFormat.Badge(hw.HardwareType), groups));
@@ -429,8 +439,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void RenameSensor(SensorVm vm)
     {
         var current = Settings.CustomNames.TryGetValue(vm.Id, out var c) ? c : vm.Name;
-        var dialog = new InputDialog("Renombrar sensor",
-            $"Nombre para «{vm.Sensor.Name}» ({SensorNames.HardwareName(vm.Sensor.Hardware)}). Déjalo vacío para usar el nombre por defecto.",
+        var dialog = new InputDialog(Loc.T("Renombrar sensor"),
+            Loc.F("Nombre para «{0}» ({1}). Déjalo vacío para usar el nombre por defecto.", vm.Sensor.Name, SensorNames.HardwareName(vm.Sensor.Hardware)),
             current) { Owner = Application.Current.MainWindow };
         if (dialog.ShowDialog() != true) return;
 
@@ -460,7 +470,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string ExportDiagnostics()
     {
         Directory.CreateDirectory(Settings.LogFolder);
-        var path = Path.Combine(Settings.LogFolder, $"MandanHeat-diagnostico_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
+        var path = Path.Combine(Settings.LogFolder, $"{Loc.T("MandanHeat-diagnostico_")}{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
         File.WriteAllText(path, _hw.Dump(), new System.Text.UTF8Encoding(true));
         return path;
     }
@@ -469,7 +479,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (_reopening) return;
         _reopening = true;
-        StatusText = "Reiniciando la lectura de sensores…";
+        StatusText = Loc.T("Reiniciando la lectura de sensores…");
         try
         {
             await Task.Run(_hw.Reopen);
@@ -479,7 +489,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            Notify?.Invoke("Error al reiniciar sensores", ex.Message, true);
+            Notify?.Invoke(Loc.T("Error al reiniciar sensores"), ex.Message, true);
         }
         finally
         {
@@ -572,7 +582,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (driverFallback && _keys.GpuFps?.Value is { } d && d > 0.5f)
         {
             if (fgUsable) _lastFpsTarget = fg;
-            var name = ProcessName(_lastFpsTarget) ?? "Juego";
+            var name = ProcessName(_lastFpsTarget) ?? Loc.T("Juego");
             return new FrameStats(name + ".exe", d, 1000.0 / d, double.NaN, FromDriver: true);
         }
         return null;
@@ -626,7 +636,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            Notify?.Invoke("No se pudo iniciar el registro", ex.Message, true);
+            Notify?.Invoke(Loc.T("No se pudo iniciar el registro"), ex.Message, true);
             return;
         }
 
@@ -636,8 +646,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _fps.SetCapturePid(gamePid);
         _lastLogWrite = 0;
         OnLoggingChanged();
-        Notify?.Invoke(automatic ? $"Registro automático: {label}" : "Registro iniciado",
-            $"Guardando {sensors.Count} sensores en {Settings.LogFolder}", false);
+        Notify?.Invoke(automatic ? Loc.F("Registro automático: {0}", label) : Loc.T("Registro iniciado"),
+            Loc.F("Guardando {0} sensores en {1}", sensors.Count, Settings.LogFolder), false);
         Wake();
     }
 
@@ -650,7 +660,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (path != null)
         {
             LastLogPath = path;
-            Notify?.Invoke("Registro guardado", Path.GetFileName(path), false);
+            Notify?.Invoke(Loc.T("Registro guardado"), Path.GetFileName(path), false);
         }
     }
 
@@ -733,12 +743,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var k = _keys;
         var list = new List<(string, ISensor?)>
         {
-            ("CPU (Tctl/Tdie)", k.CpuTemp), ("CPU uso", k.CpuLoad), ("CPU potencia", k.CpuPower),
-            ("GPU (borde)", k.GpuTemp), ("GPU punto caliente", k.GpuHotSpot), ("GPU uso", k.GpuLoad), ("GPU potencia", k.GpuPower),
-            ("Líquido", k.Liquid), ("Bomba", k.Pump), ("RAM uso", k.RamLoad),
+            ("CPU (Tctl/Tdie)", k.CpuTemp), (Loc.T("CPU uso"), k.CpuLoad), (Loc.T("CPU potencia"), k.CpuPower),
+            (Loc.T("GPU (borde)"), k.GpuTemp), (Loc.T("GPU punto caliente"), k.GpuHotSpot), (Loc.T("GPU uso"), k.GpuLoad), (Loc.T("GPU potencia"), k.GpuPower),
+            (Loc.T("Líquido"), k.Liquid), (Loc.T("Bomba"), k.Pump), (Loc.T("RAM uso"), k.RamLoad),
         };
         foreach (var fan in k.RadiatorFans)
-            list.Add(($"Radiador · {SensorNames.Display(fan, Settings)}", fan));
+            list.Add(($"{Loc.T("Radiador")} · {SensorNames.Display(fan, Settings)}", fan));
         return list;
     }
 
@@ -764,23 +774,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _fpsCard.Value = $"{f.Fps:0}";
             _fpsCard.Brush = Palette.ForFps(f.Fps);
             _fpsCard.Detail = f.FromDriver
-                ? $"{GameName(f.App)} · contador del driver"
+                ? $"{GameName(f.App)} · " + Loc.T("contador del driver")
                 : $"{GameName(f.App)} · {f.FrameTimeMs:0.0} ms" + (double.IsNaN(f.Low1Percent) ? "" : $" · 1% low {f.Low1Percent:0}");
         }
         else
         {
             _fpsCard.Value = "—";
             _fpsCard.Brush = Palette.Muted;
-            _fpsCard.Detail = Settings.FpsSource == FpsSource.Off ? "Desactivado en Ajustes" : "Abre un juego y ponlo en primer plano";
+            _fpsCard.Detail = Settings.FpsSource == FpsSource.Off ? Loc.T("Desactivado en Ajustes") : Loc.T("Abre un juego y ponlo en primer plano");
         }
 
         var k = _keys;
         SetTempCard(_cpuCard, k.CpuTemp, false,
-            Join(Part("Uso", k.CpuLoad), Part(null, k.CpuPower)), "Falta el driver PawnIO o permisos");
+            Join(Part(Loc.T("Uso"), k.CpuLoad), Part(null, k.CpuPower)), Loc.T("Falta el driver PawnIO o permisos"));
         SetTempCard(_gpuCard, k.GpuTemp, false,
-            Join(Part("Uso", k.GpuLoad), Part("Punto caliente", k.GpuHotSpot), Part(null, k.GpuPower)), "No se detecta la GPU");
+            Join(Part(Loc.T("Uso"), k.GpuLoad), Part(Loc.T("Punto caliente"), k.GpuHotSpot), Part(null, k.GpuPower)), Loc.T("No se detecta la GPU"));
         SetTempCard(_liquidCard, k.Liquid, true,
-            Join(Part("Bomba", k.Pump), RadiatorText(k, "Radiador ")), "No se detecta un AIO compatible");
+            Join(Part(Loc.T("Bomba"), k.Pump), RadiatorText(k, Loc.T("Radiador") + " ")), Loc.T("No se detecta un AIO compatible"));
 
         if (k.RamLoad?.Value is { } ram)
         {
@@ -788,7 +798,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _ramCard.Unit = "%";
             _ramCard.Brush = ram < 80 ? Palette.Text : ram < 90 ? Palette.Warn : Palette.Hot;
             _ramCard.Detail = k.RamUsed?.Value is { } used
-                ? $"{used:0.0} GB en uso" + (k.RamAvailable?.Value is { } avail ? $" de {used + avail:0} GB" : "")
+                ? Loc.F("{0:0.0} GB en uso", used) + (k.RamAvailable?.Value is { } avail ? Loc.F(" de {0:0} GB", used + avail) : "")
                 : "";
         }
         else
@@ -837,7 +847,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         var k = _keys;
         var text = $"CPU {Short(k.CpuTemp)} · GPU {Short(k.GpuTemp)}" +
-                   (k.Liquid != null ? $" · Líq {Short(k.Liquid)}" : "") +
+                   (k.Liquid != null ? $" · {Loc.T("Líq")} {Short(k.Liquid)}" : "") +
                    (fps is { } f ? $" · {f.Fps:0} FPS" : "") +
                    (_logger.IsActive ? " · REC" : "");
         if (text == TrayTooltip) return;
@@ -875,7 +885,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             lines.Add(("cpu", "CPU", Palette.Info, Segs(Temp(k.CpuTemp), Plain(k.CpuLoad), Dim(k.CpuPower))));
 
         if (Settings.OverlayShowGpu && (k.GpuTemp ?? k.GpuLoad) != null)
-            lines.Add(("gpu", "GPU", Palette.Good, Segs(Temp(k.GpuTemp), Plain(k.GpuLoad), Temp(k.GpuHotSpot, prefix: "PC "), Dim(k.GpuPower))));
+            lines.Add(("gpu", "GPU", Palette.Good, Segs(Temp(k.GpuTemp), Plain(k.GpuLoad), Temp(k.GpuHotSpot, prefix: Loc.T("PC ")), Dim(k.GpuPower))));
 
         if (Settings.OverlayShowLiquid && (k.Liquid != null || k.RadiatorFans.Count > 0))
         {
@@ -940,29 +950,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (!_isAdmin)
             list.Add(new("admin",
-                "Sin permisos de administrador: faltarán la temperatura del CPU, los sensores de la placa y los FPS de PresentMon.",
-                "Reiniciar como administrador", new RelayCommand(RestartElevated)));
+                Loc.T("Sin permisos de administrador: faltarán la temperatura del CPU, los sensores de la placa y los FPS de PresentMon."),
+                Loc.T("Reiniciar como administrador"), new RelayCommand(RestartElevated)));
         if (!_pawnIo)
             list.Add(new("pawnio",
-                "Falta el driver PawnIO, necesario para la temperatura del CPU y los sensores de la placa. " +
-                "Instálalo (o ejecuta «winget install namazso.PawnIO») y reinicia MandanHeat.",
-                "Descargar PawnIO", new RelayCommand(() => SystemInfo.OpenUrl("https://pawnio.eu/"))));
+                Loc.T("Falta el driver PawnIO, necesario para la temperatura del CPU y los sensores de la placa. Instálalo (o ejecuta «winget install namazso.PawnIO») y reinicia MandanHeat."),
+                Loc.T("Descargar PawnIO"), new RelayCommand(() => SystemInfo.OpenUrl("https://pawnio.eu/"))));
         else if (_isAdmin && _allHw.Count > 0 &&
                  _allHw.Any(h => h.HardwareType == HardwareType.Motherboard) &&
                  !_allHw.Any(h => h.HardwareType == HardwareType.SuperIO && h.Sensors.Any(s => s.Value.HasValue)))
             list.Add(new("superio",
-                "No se pueden leer los sensores de la placa base (ventiladores del radiador, MOS, chipset). " +
-                "Suele pasar cuando otro programa de monitorización (NZXT CAM, MSI Center, iCUE, HWiNFO…) tiene ocupado el chip. " +
-                "Ciérralo y pulsa «Reintentar». Si sigue igual, exporta el diagnóstico desde Ajustes.",
-                _reopening ? null : "Reintentar", _reopening ? null : new RelayCommand(ReopenSensors)));
+                Loc.T("No se pueden leer los sensores de la placa base (ventiladores del radiador, MOS, chipset). Suele pasar cuando otro programa de monitorización (NZXT CAM, MSI Center, iCUE, HWiNFO…) tiene ocupado el chip. Ciérralo y pulsa «Reintentar». Si sigue igual, exporta el diagnóstico desde Ajustes."),
+                _reopening ? null : Loc.T("Reintentar"), _reopening ? null : new RelayCommand(ReopenSensors)));
 
         if (needsPresentMon && _fps.State == FpsState.NotFound)
             list.Add(new("presentmon",
-                _downloading ? "Descargando PresentMon…" :
-                "Para medir FPS, frametime y 1 % low de cualquier juego hace falta PresentMon (herramienta gratuita de Intel, ~1 MB).",
-                _downloading ? null : "Descargar PresentMon", _downloading ? null : new RelayCommand(DownloadPresentMon)));
+                _downloading ? Loc.T("Descargando PresentMon…") :
+                Loc.T("Para medir FPS, frametime y 1 % low de cualquier juego hace falta PresentMon (herramienta gratuita de Intel, ~1 MB)."),
+                _downloading ? null : Loc.T("Descargar PresentMon"), _downloading ? null : new RelayCommand(DownloadPresentMon)));
         else if (needsPresentMon && _fps.State == FpsState.Error && _isAdmin)
-            list.Add(new("fpserror", _fps.StatusMessage, "Reintentar", new RelayCommand(RetryFps)));
+            list.Add(new("fpserror", _fps.StatusMessage, Loc.T("Reintentar"), new RelayCommand(RetryFps)));
 
         var sig = string.Join("|", list.Select(b => b.Key + b.Text + b.HasAction));
         if (sig == _bannerSignature) return;

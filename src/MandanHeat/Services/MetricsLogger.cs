@@ -76,13 +76,13 @@ public sealed class MetricsLogger : IDisposable
         }
 
         var safe = string.Concat(label.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim();
-        if (safe.Length == 0) safe = "Sesion";
+        if (safe.Length == 0) safe = Loc.T("Sesion");
         FilePath = Path.Combine(folder, $"{safe}_{StartedAt:yyyy-MM-dd_HH-mm-ss}.csv");
 
         _writer = new StreamWriter(FilePath, false, new UTF8Encoding(true), 64 * 1024);
         var headers = new List<string> { "Date", "Time" };
         headers.AddRange(_columns.Select(c => c.Header));
-        headers.AddRange(new[] { "FPS [FPS]", "Frametime [ms]", "FPS 1% low [FPS]", "Juego" });
+        headers.AddRange(new[] { "FPS [FPS]", "Frametime [ms]", "FPS 1% low [FPS]", Loc.T("Juego") });
         _writer.WriteLine(string.Join(_sep, headers.Select(Quote)));
         _lastFlush = Stopwatch.GetTimestamp();
     }
@@ -142,7 +142,7 @@ public sealed class MetricsLogger : IDisposable
 
         if (writeSummary && FilePath != null)
         {
-            try { File.WriteAllText(Path.ChangeExtension(FilePath, null) + "_resumen.txt", Summary(frameTimes, highlights), new UTF8Encoding(true)); }
+            try { File.WriteAllText(Path.ChangeExtension(FilePath, null) + Loc.T("_resumen.txt"), Summary(frameTimes, highlights), new UTF8Encoding(true)); }
             catch { }
         }
         return FilePath;
@@ -150,14 +150,14 @@ public sealed class MetricsLogger : IDisposable
 
     private string Summary(IReadOnlyList<float>? frameTimes, IReadOnlyList<(string Title, ISensor? Sensor)>? highlights)
     {
-        var es = CultureInfo.GetCultureInfo("es-ES");
+        var es = Loc.English ? CultureInfo.InvariantCulture : CultureInfo.GetCultureInfo("es-ES");
         var sb = new StringBuilder();
         var duration = DateTime.Now - StartedAt;
-        sb.AppendLine($"MandanHeat · Resumen del registro «{Label}»");
-        sb.AppendLine($"Inicio: {StartedAt:dd/MM/yyyy HH:mm:ss}   Duración: {duration:hh\\:mm\\:ss}   Muestras: {Rows}" +
-                      (StartedAutomatically ? "   (iniciado automáticamente)" : ""));
-        if (_games.Count > 0) sb.AppendLine($"Juego(s): {string.Join(", ", _games)}");
-        sb.AppendLine($"Archivo: {Path.GetFileName(FilePath)}");
+        sb.AppendLine(Loc.F("MandanHeat · Resumen del registro «{0}»", Label));
+        sb.AppendLine(Loc.T("Inicio:") + $" {StartedAt:dd/MM/yyyy HH:mm:ss}   " + Loc.T("Duración:") + $" {duration:hh\\:mm\\:ss}   " + Loc.T("Muestras:") + $" {Rows}" +
+                      (StartedAutomatically ? "   " + Loc.T("(iniciado automáticamente)") : ""));
+        if (_games.Count > 0) sb.AppendLine(Loc.F("Juego(s): {0}", string.Join(", ", _games)));
+        sb.AppendLine(Loc.F("Archivo: {0}", Path.GetFileName(FilePath)));
         sb.AppendLine();
 
         if (_fpsSamples.Count > 0 || frameTimes is { Count: > 0 })
@@ -171,14 +171,14 @@ public sealed class MetricsLogger : IDisposable
                 var sorted = list.ToArray();
                 double total = sorted.Sum();
                 double avg = sorted.Length * 1000.0 / total;
-                sb.AppendLine(string.Format(es, "  Media: {0:0.0} FPS   1% low: {1:0.0} FPS   0,1% low: {2:0.0} FPS   ({3:N0} fotogramas)",
+                sb.AppendLine(string.Format(es, Loc.T("  Media: {0:0.0} FPS   1% low: {1:0.0} FPS   0,1% low: {2:0.0} FPS   ({3:N0} fotogramas)"),
                     avg, p1, p01, sorted.Length));
-                sb.AppendLine(string.Format(es, "  Frametime medio: {0:0.00} ms   peor 1%: {1:0.00} ms   máximo: {2:0.00} ms",
+                sb.AppendLine(string.Format(es, Loc.T("  Frametime medio: {0:0.00} ms   peor 1%: {1:0.00} ms   máximo: {2:0.00} ms"),
                     total / sorted.Length, sorted[(int)(sorted.Length * 0.99)], sorted[^1]));
             }
             else if (_fpsSamples.Count > 0)
             {
-                sb.AppendLine(string.Format(es, "  Media: {0:0.0} FPS   Mín: {1:0.0}   Máx: {2:0.0}   (muestras por segundo)",
+                sb.AppendLine(string.Format(es, Loc.T("  Media: {0:0.0} FPS   Mín: {1:0.0}   Máx: {2:0.0}   (muestras por segundo)"),
                     _fpsSamples.Average(), _fpsSamples.Min(), _fpsSamples.Max()));
             }
             sb.AppendLine();
@@ -186,23 +186,23 @@ public sealed class MetricsLogger : IDisposable
 
         if (highlights is { Count: > 0 })
         {
-            sb.AppendLine("== Principales ==");
+            sb.AppendLine(Loc.T("== Principales =="));
             foreach (var (title, sensor) in highlights)
             {
                 var col = sensor == null ? null : _columns.FirstOrDefault(c => ReferenceEquals(c.Sensor, sensor));
                 if (col is not { Count: > 0 }) continue;
-                sb.AppendLine(string.Format(es, "  {0,-28} mín {1,8:0.0}   media {2,8:0.0}   máx {3,8:0.0}  {4}",
+                sb.AppendLine(string.Format(es, Loc.T("  {0,-28} mín {1,8:0.0}   media {2,8:0.0}   máx {3,8:0.0}  {4}"),
                     title, col.Min, col.Sum / col.Count, col.Max, Unit(col.Sensor.SensorType)));
             }
             sb.AppendLine();
         }
 
-        sb.AppendLine("== Todos los sensores ==");
+        sb.AppendLine(Loc.T("== Todos los sensores =="));
         foreach (var g in _columns.Where(c => c.Count > 0).GroupBy(c => c.Group))
         {
             sb.AppendLine($"[{g.Key}]");
             foreach (var c in g)
-                sb.AppendLine(string.Format(es, "  {0,-48} mín {1,9:0.##}   media {2,9:0.##}   máx {3,9:0.##}",
+                sb.AppendLine(string.Format(es, Loc.T("  {0,-48} mín {1,9:0.##}   media {2,9:0.##}   máx {3,9:0.##}"),
                     c.Header, c.Min, c.Sum / c.Count, c.Max));
         }
         return sb.ToString();
