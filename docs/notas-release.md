@@ -1,14 +1,14 @@
 ## MandanHeat {VERSION}
 
-Monitor de hardware gratuito para Windows: temperaturas, uso, ventiladores, potencia y FPS del juego, con overlay y registro de métricas.
+Free hardware monitor for Windows: temperatures, usage, fan speeds, power draw and in-game FPS, with an in-game overlay and metrics logging.
 
-### Descarga
-**MandanHeat-win-x64.zip**: descomprime y abre `MandanHeat.exe`. Es un único ejecutable y no necesita instalar .NET.
+### Download
+**MandanHeat-win-x64.zip**: unzip it and run `MandanHeat.exe`. It is a single executable and does not require installing .NET.
 
-### Requisitos
-- Windows 10/11 de 64 bits.
-- Driver **PawnIO**, para la temperatura de la CPU y los sensores de la placa base: `winget install namazso.PawnIO`, o descárgalo de https://pawnio.eu/
-- Permisos de administrador (la app los pide al abrirse).
-- *(Opcional)* PresentMon para FPS, frametime y 1 % low. La app lo descarga con un botón.
+### Requirements
+- 64-bit Windows 10/11.
+- **PawnIO** driver, for the CPU temperature and motherboard sensors: `winget install namazso.PawnIO`, or download it from https://pawnio.eu/
+- Administrator rights (the app asks for them on startup).
+- *(Optional)* PresentMon for FPS, frametime and 1 % low. The app downloads it with a button.
 
-> Windows SmartScreen puede avisar porque el ejecutable no está firmado: **Más información → Ejecutar de todas formas**.
+> Windows SmartScreen may show a warning because the executable is not signed: **More info → Run anyway**.
