@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using MandanHeat.Interop;
@@ -7,10 +9,10 @@ namespace MandanHeat;
 
 public partial class SettingsWindow : Window
 {
-    public SettingsWindow(MainViewModel main)
+    public SettingsWindow(MainViewModel main, Func<Task<string>> checkForUpdates)
     {
         InitializeComponent();
-        DataContext = new SettingsViewModel(main);
+        DataContext = new SettingsViewModel(main, checkForUpdates);
         SourceInitialized += (_, _) => Native.UseDarkTitleBar(new WindowInteropHelper(this).Handle);
     }
 }

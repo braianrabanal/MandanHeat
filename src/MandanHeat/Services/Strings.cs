@@ -264,5 +264,33 @@ internal static class Strings
         ["PawnIO instalado:"] = "PawnIO installed:",
         ["================ Informe de LibreHardwareMonitor ================"] = "================ LibreHardwareMonitor report ================",
         ["(no disponible: {0})"] = "(not available: {0})",
+
+        // ---- Actualizaciones
+        ["Buscar actualizaciones automáticamente"] = "Check for updates automatically",
+        ["Buscar ahora"] = "Check now",
+        ["Versión instalada: {0}"] = "Installed version: {0}",
+        ["Buscando actualizaciones…"] = "Checking for updates…",
+        ["Las actualizaciones automáticas solo funcionan con el ejecutable descargado de GitHub."] =
+            "Automatic updates only work with the executable downloaded from GitHub.",
+        ["Actualización en curso…"] = "Update in progress…",
+        ["No se pudo comprobar: {0}"] = "Could not check: {0}",
+        ["Tienes la última versión ({0})."] = "You have the latest version ({0}).",
+        ["Versión {0} disponible."] = "Version {0} available.",
+        ["MandanHeat {0} disponible"] = "MandanHeat {0} available",
+        ["Abre MandanHeat para instalarla."] = "Open MandanHeat to install it.",
+        ["Hay una versión nueva de MandanHeat: {0} (tienes la {1})."] = "A new version of MandanHeat is available: {0} (you have {1}).",
+        ["¿Descargarla e instalarla ahora? La app se reiniciará sola."] = "Download and install it now? The app will restart by itself.",
+        ["El registro de métricas en curso se detendrá y se guardará."] = "The metrics log in progress will be stopped and saved.",
+        ["No se pudo instalar la actualización:"] = "The update could not be installed:",
+        ["¿Abrir la página de descargas?"] = "Open the downloads page?",
+        ["La actualización está instalada, pero no se pudo reiniciar la app. Ábrela de nuevo."] =
+            "The update is installed, but the app could not restart. Please open it again.",
+        ["MandanHeat actualizado"] = "MandanHeat updated",
+        ["Ya tienes la versión {0}."] = "You now have version {0}.",
+        ["Descargando MandanHeat {0}…"] = "Downloading MandanHeat {0}…",
+        ["Instalando y reiniciando…"] = "Installing and restarting…",
+        ["La descarga está dañada (la suma de comprobación no coincide)."] = "The download is corrupted (checksum mismatch).",
+        ["El zip no contiene {0}."] = "The zip does not contain {0}.",
+        ["El ejecutable descargado no es MandanHeat {0}."] = "The downloaded executable is not MandanHeat {0}.",
     };
 }

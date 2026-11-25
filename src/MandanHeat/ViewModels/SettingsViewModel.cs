@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using MandanHeat.Services;
 
@@ -17,11 +18,22 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _startWithWindows;
     private string _diagnosticText = "";
 
-    public SettingsViewModel(MainViewModel main)
+    public SettingsViewModel(MainViewModel main, Func<Task<string>> checkForUpdates)
     {
         _main = main;
         _s = main.Settings;
         _startWithWindows = StartupTask.IsEnabled();
+        _updateStatus = Updater.CanSelfUpdate
+            ? Loc.F("Versión instalada: {0}", Updater.CurrentVersionText)
+            : Loc.F("Versión instalada: {0}", Updater.CurrentVersionText) + " · " + Loc.T("Las actualizaciones automáticas solo funcionan con el ejecutable descargado de GitHub.");
+        CheckUpdatesCommand = new RelayCommand(async () =>
+        {
+            if (_checkingUpdates) return;
+            _checkingUpdates = true;
+            UpdateStatus = Loc.T("Buscando actualizaciones…");
+            try { UpdateStatus = await checkForUpdates(); }
+            finally { _checkingUpdates = false; }
+        });
 
         foreach (var (sensor, name, hw) in main.FanSensors())
         {
@@ -88,6 +100,12 @@ public sealed class SettingsViewModel : ObservableObject
     public bool StartMinimized { get => _s.StartMinimized; set => SetBool(() => _s.StartMinimized, v => _s.StartMinimized = v, value, nameof(AppSettings.StartMinimized)); }
     public bool CloseToTray { get => _s.CloseToTray; set => SetBool(() => _s.CloseToTray, v => _s.CloseToTray = v, value, nameof(AppSettings.CloseToTray)); }
     public bool MinimizeToTray { get => _s.MinimizeToTray; set => SetBool(() => _s.MinimizeToTray, v => _s.MinimizeToTray = v, value, nameof(AppSettings.MinimizeToTray)); }
+    public bool CheckForUpdates { get => _s.CheckForUpdates; set => SetBool(() => _s.CheckForUpdates, v => _s.CheckForUpdates = v, value, nameof(AppSettings.CheckForUpdates)); }
+
+    private string _updateStatus;
+    private bool _checkingUpdates;
+    public string UpdateStatus { get => _updateStatus; private set => Set(ref _updateStatus, value); }
+    public ICommand CheckUpdatesCommand { get; }
 
     public bool LangAuto { get => _s.Language == ""; set { if (value) SetLanguage(""); } }
     public bool LangEs { get => _s.Language == "es"; set { if (value) SetLanguage("es"); } }

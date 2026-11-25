@@ -3,7 +3,7 @@
 Free hardware monitor for Windows: temperatures, usage, fan speeds, power draw and in-game FPS, with an in-game overlay and metrics logging.
 
 ### Download
-**MandanHeat-win-x64.zip**: unzip it and run `MandanHeat.exe`. It is a single executable and does not require installing .NET.
+**MandanHeat-win-x64.zip**: unzip it and run `MandanHeat.exe`. It is a single executable and does not require installing .NET. Once installed, the app offers future updates by itself.
 
 ### Requirements
 - 64-bit Windows 10/11.
