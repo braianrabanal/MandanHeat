@@ -50,6 +50,11 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource Hint}"
                                Text="{l:T 'Ahorro automático: con la ventana minimizada no se dibuja la interfaz, se activa el modo eficiencia de Windows y solo se leen los sensores que usen el overlay o el registro. Sin overlay ni registro, no se lee nada.'}" />
+                    <CheckBox Content="{l:T 'Buscar actualizaciones automáticamente'}" IsChecked="{Binding CheckForUpdates}" Margin="0,4,0,8" />
+                    <DockPanel>
+                        <Button DockPanel.Dock="Left" Content="{l:T 'Buscar ahora'}" Command="{Binding CheckUpdatesCommand}" Padding="12,4" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding UpdateStatus}" Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    </DockPanel>
                 </StackPanel>
             </Border>
 

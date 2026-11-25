@@ -36,6 +36,8 @@ public sealed class AppSettings
     /// <summary>Idioma de la interfaz: "" = automático (el de Windows), "es" o "en".</summary>
     public string Language { get; set; } = "";
     public bool StartMinimized { get; set; }
+    /// <summary>Comprobar al arrancar (y cada pocas horas) si hay una versión nueva en GitHub.</summary>
+    public bool CheckForUpdates { get; set; } = true;
     public bool ShowAllSensors { get; set; }
     /// <summary>Vista simple (tarjetas + métricas elegidas) en lugar de la lista completa.</summary>
     public bool SimpleView { get; set; } = true;

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using MandanHeat.Interop;
 using MandanHeat.Services;
 using MandanHeat.ViewModels;
@@ -38,7 +39,11 @@ public partial class MainWindow : Window
 
         SourceInitialized += OnSourceInitialized;
         StateChanged += OnStateChanged;
-        IsVisibleChanged += (_, _) => _vm.SetUiVisible(IsVisible && WindowState != WindowState.Minimized);
+        IsVisibleChanged += (_, _) =>
+        {
+            _vm.SetUiVisible(IsVisible && WindowState != WindowState.Minimized);
+            if (IsVisible) PromptPendingUpdate();
+        };
         Closing += OnClosing;
         Closed += OnClosed;
 
@@ -72,7 +77,136 @@ public partial class MainWindow : Window
         ApplyOverlayVisibility();
         if (App.IsDevInstance && Environment.GetCommandLineArgs().Contains("--open-settings"))
             _ = Dispatcher.BeginInvoke(() => OnSettingsClick(this, new RoutedEventArgs()), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        StartUpdateChecks();
         await _vm.RunAsync(_cts.Token);
+    }
+
+    // ------------------------------------------------------------------ Actualizaciones
+
+    private DispatcherTimer? _updateTimer;
+    private UpdateInfo? _pendingUpdate;
+    private bool _updateDeclined;
+    private bool _updateBusy;
+    private bool _updateBalloonShown;
+
+    private void StartUpdateChecks()
+    {
+        if (Environment.GetCommandLineArgs().Contains(Updater.UpdatedArg))
+            _tray?.ShowBalloon(Loc.T("MandanHeat actualizado"), Loc.F("Ya tienes la versión {0}.", Updater.CurrentVersionText));
+
+        if (App.IsDevInstance || !Updater.CanSelfUpdate) return;
+        // Primera comprobación poco después de arrancar y luego cada 6 horas (la app suele pasar días en la bandeja).
+        _updateTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(20) };
+        _updateTimer.Tick += async (_, _) =>
+        {
+            _updateTimer.Interval = TimeSpan.FromHours(6);
+            if (_vm.Settings.CheckForUpdates) await CheckForUpdatesAsync(manual: false);
+        };
+        _updateTimer.Start();
+    }
+
+    /// <summary>Busca una versión nueva. Devuelve el texto de estado que muestra Ajustes.</summary>
+    public async Task<string> CheckForUpdatesAsync(bool manual)
+    {
+        if (!Updater.CanSelfUpdate)
+            return Loc.T("Las actualizaciones automáticas solo funcionan con el ejecutable descargado de GitHub.");
+        if (_updateBusy) return Loc.T("Actualización en curso…");
+
+        UpdateInfo? info;
+        try
+        {
+            info = await Updater.CheckAsync(_cts.Token);
+        }
+        catch (Exception ex)
+        {
+            return Loc.F("No se pudo comprobar: {0}", ex.Message);
+        }
+
+        if (info == null)
+        {
+            _pendingUpdate = null;
+            return Loc.F("Tienes la última versión ({0}).", Updater.CurrentVersionText);
+        }
+
+        bool isNew = _pendingUpdate?.Version != info.Version;
+        _pendingUpdate = info;
+        if (isNew) _updateDeclined = false;
+
+        if (manual || (IsVisible && WindowState != WindowState.Minimized))
+        {
+            await PromptUpdateAsync(manual);
+        }
+        else if (!_updateBalloonShown || isNew)
+        {
+            // Con la ventana oculta (o en pleno juego) no se interrumpe: se avisa y se pregunta al abrirla.
+            _updateBalloonShown = true;
+            _tray?.ShowBalloon(Loc.F("MandanHeat {0} disponible", info.VersionText), Loc.T("Abre MandanHeat para instalarla."));
+        }
+        return Loc.F("Versión {0} disponible.", info.VersionText);
+    }
+
+    private void PromptPendingUpdate()
+    {
+        if (_pendingUpdate == null || _updateDeclined || _updateBusy) return;
+        _ = Dispatcher.BeginInvoke(async () => await PromptUpdateAsync(manual: false), DispatcherPriority.ApplicationIdle);
+    }
+
+    private async Task PromptUpdateAsync(bool manual)
+    {
+        if (_pendingUpdate is not { } info || _updateBusy || (_updateDeclined && !manual)) return;
+        _updateBusy = true;
+        try
+        {
+            Window owner = _settings is { IsVisible: true } ? _settings : this;
+            var msg = Loc.F("Hay una versión nueva de MandanHeat: {0} (tienes la {1}).", info.VersionText, Updater.CurrentVersionText)
+                      + "\n\n" + Loc.T("¿Descargarla e instalarla ahora? La app se reiniciará sola.");
+            if (_vm.IsLogging) msg += "\n\n" + Loc.T("El registro de métricas en curso se detendrá y se guardará.");
+            if (MessageBox.Show(owner, msg, "MandanHeat", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                _updateDeclined = true;
+                return;
+            }
+            await InstallUpdateAsync(info, owner);
+        }
+        finally
+        {
+            _updateBusy = false;
+        }
+    }
+
+    private async Task InstallUpdateAsync(UpdateInfo info, Window owner)
+    {
+        var progressWindow = new UpdateProgressWindow(info.VersionText);
+        progressWindow.Show();
+        try
+        {
+            await Updater.InstallAsync(info, new Progress<double>(progressWindow.Report), _cts.Token);
+        }
+        catch (Exception ex)
+        {
+            progressWindow.Close();
+            if (_cts.IsCancellationRequested) return;
+            var r = MessageBox.Show(owner,
+                Loc.T("No se pudo instalar la actualización:") + "\n" + ex.Message + "\n\n" + Loc.T("¿Abrir la página de descargas?"),
+                "MandanHeat", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (r == MessageBoxResult.Yes) SystemInfo.OpenUrl(info.PageUrl);
+            return;
+        }
+
+        progressWindow.SetInstalling();
+        try
+        {
+            Updater.Restart(minimized: !IsVisible || WindowState == WindowState.Minimized);
+        }
+        catch (Exception ex)
+        {
+            progressWindow.Close();
+            MessageBox.Show(owner, Loc.T("La actualización está instalada, pero no se pudo reiniciar la app. Ábrela de nuevo.") + "\n" + ex.Message,
+                "MandanHeat", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        progressWindow.Close();
+        ExitApp();
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -132,7 +266,7 @@ public partial class MainWindow : Window
         if (_settings != null) { _settings.Activate(); return; }
         // Mientras se editan, los atajos no deben dispararse al pulsarlos en las cajas.
         _hotkeys.UnregisterAll();
-        _settings = new SettingsWindow(_vm) { Owner = this };
+        _settings = new SettingsWindow(_vm, () => CheckForUpdatesAsync(manual: true)) { Owner = this };
         _settings.Closed += (_, _) =>
         {
             _settings = null;
@@ -196,6 +330,7 @@ public partial class MainWindow : Window
     private void OnClosed(object? sender, EventArgs e)
     {
         _cts.Cancel();
+        _updateTimer?.Stop();
         _settings?.Close();
         _hotkeys.Dispose();
         _tray?.Dispose();

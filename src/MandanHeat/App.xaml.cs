@@ -81,6 +81,15 @@ public partial class App : Application
             return;
         }
 
+        // --update-test ruta → busca e instala la última versión sin preguntar, deja el resultado en el archivo y la arranca (pruebas).
+        int updIdx = Array.IndexOf(e.Args, "--update-test");
+        if (updIdx >= 0 && updIdx + 1 < e.Args.Length)
+        {
+            RunUpdateTest(e.Args[updIdx + 1]);
+            Shutdown();
+            return;
+        }
+
         // --dev: instancia de pruebas (sin UAC, sin instancia única y sin atajos globales).
         IsDevInstance = e.Args.Contains("--dev");
 
@@ -95,13 +104,16 @@ public partial class App : Application
             // El usuario canceló el UAC: seguimos con lo que se pueda leer.
         }
 
-        if (!IsDevInstance && !AcquireSingleInstance())
+        // Tras una actualización, la versión anterior aún se está cerrando: se le da más margen.
+        if (!IsDevInstance && !AcquireSingleInstance(TimeSpan.FromSeconds(e.Args.Contains(Updater.UpdatedArg) ? 30 : 3)))
         {
             MessageBox.Show(Loc.T("MandanHeat ya está abierto (mira en la bandeja del sistema, junto al reloj)."),
                 "MandanHeat", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
         }
+
+        if (!IsDevInstance) Updater.CleanupLeftovers();
 
         // --minimized: arranque desde "Iniciar con Windows", directamente a la bandeja.
         MainWindow = new MainWindow(startHidden: e.Args.Contains("--minimized"));
@@ -131,13 +143,37 @@ public partial class App : Application
         File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
     }
 
-    private bool AcquireSingleInstance()
+    private static void RunUpdateTest(string path)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Versión actual: {Updater.CurrentVersionText}   Ejecutable único: {Updater.CanSelfUpdate}");
+        try
+        {
+            // En un hilo aparte: esperar aquí de forma síncrona bloquearía el hilo de la interfaz.
+            var info = System.Threading.Tasks.Task.Run(() => Updater.CheckAsync(CancellationToken.None)).GetAwaiter().GetResult();
+            sb.AppendLine(info == null ? "Sin versión nueva" : $"Nueva: {info.VersionText}  {info.ZipUrl}  sha256={info.Sha256 ?? "-"}");
+            if (info != null && Updater.CanSelfUpdate)
+            {
+                System.Threading.Tasks.Task.Run(() => Updater.InstallAsync(info, null, CancellationToken.None)).GetAwaiter().GetResult();
+                sb.AppendLine("Instalada");
+                Updater.Restart(minimized: true);
+                sb.AppendLine("Reiniciada");
+            }
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"Error: {ex}");
+        }
+        File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
+    }
+
+    private bool AcquireSingleInstance(TimeSpan wait)
     {
         try
         {
             _singleInstance = new Mutex(false, "MandanHeat_SingleInstance");
             // Margen para cuando nos reiniciamos como administrador y la instancia anterior aún se cierra.
-            return _singleInstance.WaitOne(TimeSpan.FromSeconds(3));
+            return _singleInstance.WaitOne(wait);
         }
         catch (AbandonedMutexException)
         {

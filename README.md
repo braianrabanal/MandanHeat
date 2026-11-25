@@ -50,6 +50,7 @@ to a file** for benchmarking or troubleshooting. Single portable `.exe`, no inst
   and only reads the sensors the overlay or the log actually need.
 - Sensors can be **renamed and hidden** (right-click any of them).
 - **English and Spanish** interface, switchable on the fly in **⚙ Settings → Language** (follows your Windows language by default). Log files and summaries are translated too.
+- **Automatic updates**: the app checks GitHub for new releases and, if you accept, downloads, installs and restarts itself. Can be turned off in **⚙ Settings → General**.
 
 ![Full view](docs/captura-completa.png)
 
