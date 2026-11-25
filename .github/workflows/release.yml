@@ -1,11 +1,17 @@
 name: Release
 
 # Al subir una etiqueta vX.Y.Z se compila el ejecutable único y se publica la Release.
-# "Run workflow" (manual) solo compila y deja el zip como artefacto, sin publicar nada.
+# "Run workflow" (manual) sin versión solo compila y deja el zip como artefacto.
+# Con una versión (X.Y.Z) también crea la etiqueta vX.Y.Z y publica la Release.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a publicar (X.Y.Z). Vacío = solo compilar'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -25,7 +31,9 @@ jobs:
       - name: Versión
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF_TYPE -eq 'tag') { $v = $env:GITHUB_REF_NAME.TrimStart('v') } else { $v = '0.0.0' }
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $v = $env:GITHUB_REF_NAME.TrimStart('v') }
+          elseif ('${{ inputs.version }}' -ne '') { $v = '${{ inputs.version }}' }
+          else { $v = '0.0.0' }
           "VERSION=$v" >> $env:GITHUB_ENV
 
       - name: Compilar ejecutable único
@@ -38,16 +46,19 @@ jobs:
           path: release/MandanHeat-win-x64.zip
 
       - name: Publicar Release
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || inputs.version != ''
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = $env:GITHUB_REF_NAME
-          $prev = git describe --tags --abbrev=0 "$tag^" 2>$null
-          $range = if ($prev) { "$prev..$tag" } else { $tag }
+          $isTag = $env:GITHUB_REF_TYPE -eq 'tag'
+          $tag = if ($isTag) { $env:GITHUB_REF_NAME } else { "v$env:VERSION" }
+          $end = if ($isTag) { $tag } else { 'HEAD' }
+          $prev = git describe --tags --abbrev=0 "$end^" 2>$null
+          $range = if ($prev) { "$prev..$end" } else { $end }
           $changes = git log $range --no-merges --pretty=format:"- %s" | Where-Object { $_ -notmatch '^- Versión ' }
           $notes = (Get-Content docs/notas-release.md -Raw).Replace('{VERSION}', $env:VERSION)
-          if ($changes) { $notes += "`n### Cambios`n" + ($changes -join "`n") + "`n" }
+          if ($changes) { $notes += "`n### Changes`n" + ($changes -join "`n") + "`n" }
           Set-Content -Path notas.md -Value $notes -Encoding utf8
-          gh release create $tag release/MandanHeat-win-x64.zip --title "MandanHeat $env:VERSION" --notes-file notas.md
+          if ($isTag) { gh release create $tag release/MandanHeat-win-x64.zip --title "MandanHeat $env:VERSION" --notes-file notas.md }
+          else { gh release create $tag release/MandanHeat-win-x64.zip --title "MandanHeat $env:VERSION" --notes-file notas.md --target $env:GITHUB_SHA }
