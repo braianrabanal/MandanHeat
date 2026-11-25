@@ -10,11 +10,12 @@ namespace MandanHeat.Services;
 /// </summary>
 internal static partial class SensorNames
 {
-    public static string Display(ISensor s, AppSettings settings)
+    public static string Display(ISensor s, AppSettings settings, bool localize = true)
     {
         if (settings.CustomNames.TryGetValue(s.Identifier.ToString(), out var custom) && !string.IsNullOrWhiteSpace(custom))
             return custom;
-        return Alias(s) ?? s.Name;
+        var alias = Alias(s);
+        return alias == null ? s.Name : localize ? Loc.T(alias) : alias;
     }
 
     private static string? Alias(ISensor s)
@@ -31,7 +32,7 @@ internal static partial class SensorNames
                     if (n == "CPU Total") return "Uso total";
                     if (n == "CPU Core Max") return "Hilo más cargado";
                     var m = CoreRegex().Match(n);
-                    if (m.Success) return $"Hilo #{m.Groups[1].Value}"; // LHM numera hilos lógicos como "Core"
+                    if (m.Success) return $"{Loc.T("Hilo")} #{m.Groups[1].Value}"; // LHM numera hilos lógicos como "Core"
                 }
                 break;
 
@@ -81,8 +82,8 @@ internal static partial class SensorNames
 
     public static string HardwareName(IHardware hw) => hw.Name switch
     {
-        "Total Memory" => "Memoria RAM",
-        "Virtual Memory" => "Memoria virtual (RAM + archivo de paginación)",
+        "Total Memory" => Loc.T("Memoria RAM"),
+        "Virtual Memory" => Loc.T("Memoria virtual (RAM + archivo de paginación)"),
         _ => hw.Parent != null ? $"{hw.Parent.Name} · {hw.Name}" : hw.Name,
     };
 

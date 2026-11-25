@@ -111,8 +111,8 @@ public sealed class HardwareService : IDisposable
     public string Dump()
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"MandanHeat - volcado de sensores {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"Administrador: {SystemInfo.IsAdmin}   PawnIO instalado: {SystemInfo.IsPawnIoInstalled()}");
+        sb.AppendLine(Loc.F("MandanHeat - volcado de sensores {0:yyyy-MM-dd HH:mm:ss}", DateTime.Now));
+        sb.AppendLine(Loc.T("Administrador:") + $" {SystemInfo.IsAdmin}   " + Loc.T("PawnIO instalado:") + $" {SystemInfo.IsPawnIoInstalled()}");
         sb.AppendLine();
         foreach (var hw in AllHardware())
         {
@@ -125,14 +125,14 @@ public sealed class HardwareService : IDisposable
             sb.AppendLine();
         }
 
-        sb.AppendLine("================ Informe de LibreHardwareMonitor ================");
+        sb.AppendLine(Loc.T("================ Informe de LibreHardwareMonitor ================"));
         try
         {
             lock (_lock) sb.AppendLine(_computer.GetReport());
         }
         catch (Exception ex)
         {
-            sb.AppendLine($"(no disponible: {ex.Message})");
+            sb.AppendLine(Loc.F("(no disponible: {0})", ex.Message));
         }
         return sb.ToString();
     }
