@@ -15,7 +15,7 @@
     <AssemblyName>MandanHeat</AssemblyName>
     <RootNamespace>MandanHeat</RootNamespace>
     <Product>MandanHeat</Product>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
     <!-- Bajo consumo: GC sin hilo en segundo plano y que priorice usar poca memoria -->
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <ServerGarbageCollection>false</ServerGarbageCollection>
