@@ -1,110 +1,130 @@
 <p align="center">
-  <img src="docs/icono.png" width="128" alt="MandanHeat">
+  <img src="docs/icono.png" width="128" alt="MandanHeat logo">
 </p>
 
 <h1 align="center">MandanHeat</h1>
 
 <p align="center">
-  Monitor de hardware gratuito para Windows: temperaturas, uso, ventiladores, potencia y <b>FPS del juego</b>,
-  con <b>overlay</b> dentro del juego y <b>registro de métricas</b> en CSV.
+  <b>Free hardware monitor for Windows</b>: CPU &amp; GPU temperatures, usage, fan speeds, power draw and <b>in-game FPS</b>,
+  with an <b>in-game overlay</b> and <b>CSV metrics logging</b>.
 </p>
 
 <p align="center">
-  <a href="../../releases/latest"><b>⬇ Descargar la última versión</b></a>
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/braianrabanal/MandanHeat?label=latest%20release&color=orange" alt="Latest release"></a>
+  <a href="../../releases"><img src="https://img.shields.io/github/downloads/braianrabanal/MandanHeat/total?color=brightgreen" alt="Downloads"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-blue" alt="Windows 10 | 11">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/braianrabanal/MandanHeat" alt="MIT license"></a>
+  <a href="../../stargazers"><img src="https://img.shields.io/github/stars/braianrabanal/MandanHeat?style=flat" alt="Stars"></a>
 </p>
 
-![Vista simple](docs/captura-principal.png)
+<p align="center">
+  <a href="../../releases/latest"><b>⬇ Download the latest version</b></a>
+</p>
 
-## Características
+![MandanHeat simple view](docs/captura-principal.png)
 
-- **Vista simple** con las métricas básicas o las que elijas (★), y **vista completa** con todos los sensores de cada componente.
+MandanHeat is a lightweight, open-source alternative to MSI Afterburner / RTSS, HWiNFO and HWMonitor for people who want
+one small app to **monitor PC temperatures, check game FPS and frametime, show an overlay while gaming, and log everything
+to a file** for benchmarking or troubleshooting. Single portable `.exe`, no installer, no .NET runtime needed.
 
-- **Sensores de todo el equipo**:
-  - **CPU**: temperatura (Tctl/Tdie y CCDs), uso por hilo y potencia.
-  - **GPU**: borde, punto caliente y memoria; uso, potencia y ventilador.
-  - **Refrigeración líquida** (NZXT Kraken, Corsair…): líquido y bomba.
-  - **Placa base**: MOS, chipset y ventiladores de cada conector.
-  - **RAM** y **discos**.
-- **FPS del juego en primer plano**, con frametime y 1 % low (mediante [PresentMon](https://github.com/GameTechDev/PresentMon)).
-  Si no está disponible, usa el contador del driver de la GPU.
-- **Overlay en juego**, transparente y que no captura clics. Puedes elegir la esquina, el tamaño, la opacidad y qué mostrar.
-  Cualquier sensor se puede añadir al overlay.
-- **Registro de métricas** a CSV (formato parecido al de HWiNFO), con un **resumen** al terminar:
-  mínimo, media y máximo de cada sensor, y FPS medios, 1 % low y 0,1 % low.
-  Se puede iniciar solo al abrir un juego y parar al cerrarlo.
-- **Atajos de teclado globales** configurables, que funcionan dentro del juego.
-- **Bandeja del sistema**: al cerrar la ventana sigue funcionando junto al reloj. Opción de iniciar con Windows.
-- **Bajo consumo**: con la ventana oculta no dibuja la interfaz, activa el modo eficiencia de Windows 11
-  y solo lee los sensores que necesitan el overlay o el registro.
-- Sensores **renombrables y ocultables** (clic derecho sobre cualquiera).
+## Features
 
-![Vista completa](docs/captura-completa.png)
+- **Simple view** with the basic metrics (or the ones you pick with ★) and **full view** with every sensor of each component.
 
-| Overlay | Ajustes |
+- **Sensors for your whole system**:
+  - **CPU**: temperature (Tctl/Tdie and per-CCD), per-thread usage and power.
+  - **GPU**: edge, hot spot and memory temperatures; usage, power and fan speed.
+  - **Liquid cooling** (NZXT Kraken, Corsair…): coolant temperature and pump speed.
+  - **Motherboard**: VRM (MOS), chipset and every fan header.
+  - **RAM** and **drives**.
+- **In-game FPS** of the foreground game, with frametime and 1 % low (via [PresentMon](https://github.com/GameTechDev/PresentMon)).
+  Falls back to the GPU driver counter when PresentMon is unavailable.
+- **In-game overlay**: transparent and click-through. Choose the corner, size, opacity and what to show.
+  Any sensor can be added to the overlay.
+- **Metrics logging** to CSV (similar to HWiNFO's format), with a **summary** when you stop:
+  min, average and max of every sensor, plus average FPS, 1 % low and 0.1 % low.
+  It can start automatically when a game opens and stop when it closes.
+- **Global hotkeys**, configurable, that work inside games.
+- **System tray**: closing the window keeps it running next to the clock. Optional start with Windows.
+- **Low overhead**: with the window hidden it stops drawing the UI, enables Windows 11 efficiency mode
+  and only reads the sensors the overlay or the log actually need.
+- Sensors can be **renamed and hidden** (right-click any of them).
+
+![Full view](docs/captura-completa.png)
+
+| Overlay | Settings |
 |---|---|
-| ![Overlay](docs/captura-overlay.png) | ![Ajustes](docs/captura-ajustes.png) |
+| ![Overlay](docs/captura-overlay.png) | ![Settings](docs/captura-ajustes.png) |
 
-## Instalación
+## Installation
 
-1. Descarga `MandanHeat-win-x64.zip` desde **[Releases](../../releases/latest)** y descomprímelo donde quieras.
-   Es un único `MandanHeat.exe`: no hace falta instalar nada más, ni siquiera .NET.
-2. **Instala el driver PawnIO**. Es necesario para leer la temperatura de la CPU y los sensores de la placa base. Abre PowerShell y ejecuta:
+1. Download `MandanHeat-win-x64.zip` from **[Releases](../../releases/latest)** and unzip it anywhere.
+   It is a single `MandanHeat.exe`: nothing else to install, not even .NET.
+2. **Install the PawnIO driver.** It is required to read the CPU temperature and the motherboard sensors. Open PowerShell and run:
    ```powershell
    winget install namazso.PawnIO
    ```
-   O descárgalo de <https://pawnio.eu/>. Es el driver firmado que usa LibreHardwareMonitor.
-3. Abre `MandanHeat.exe`. Pedirá **permisos de administrador**: los necesita para leer los sensores y medir los FPS.
-4. *(Opcional)* Para FPS, frametime y 1 % low de cualquier juego, pulsa **«Descargar PresentMon»** en el aviso de la app.
+   Or download it from <https://pawnio.eu/>. It is the signed driver used by LibreHardwareMonitor.
+3. Run `MandanHeat.exe`. It asks for **administrator rights**, which it needs to read the sensors and measure FPS.
+4. *(Optional)* For FPS, frametime and 1 % low in any game, click **"Download PresentMon"** in the app's notice.
 
-> **Aviso de Windows SmartScreen:** al no estar firmado digitalmente, Windows puede mostrar
-> «Windows protegió su PC». Pulsa **Más información → Ejecutar de todas formas**.
+> **Windows SmartScreen warning:** since the app is not digitally signed, Windows may show
+> "Windows protected your PC". Click **More info → Run anyway**.
 
-## Uso
+## Usage
 
-| Acción | Cómo |
+| Action | How |
 |---|---|
-| Mostrar u ocultar el overlay | Interruptor «Overlay en juego» o **Ctrl+Shift+F10** |
-| Iniciar o detener un registro | Botón «Grabar registro» o **Ctrl+Shift+F11** |
-| Mostrar u ocultar la ventana | **Ctrl+Shift+F9**, o doble clic en el icono de la bandeja |
-| Salir del todo | Clic derecho en el icono de la bandeja → **Salir** |
-| Cambiar entre la vista simple y la completa | Selector **SIMPLE / COMPLETA** arriba a la derecha |
-| Elegir qué se ve en la vista simple | ★ junto a cada sensor en la vista completa (clic derecho en una ficha para quitarla) |
-| Renombrar, ocultar o fijar un sensor en el overlay | Clic derecho sobre el sensor |
+| Show or hide the overlay | "In-game overlay" switch or **Ctrl+Shift+F10** |
+| Start or stop a log | "Record log" button or **Ctrl+Shift+F11** |
+| Show or hide the window | **Ctrl+Shift+F9**, or double-click the tray icon |
+| Quit completely | Right-click the tray icon → **Exit** |
+| Switch between simple and full view | **SIMPLE / FULL** selector at the top right |
+| Choose what the simple view shows | ★ next to each sensor in the full view (right-click a tile to remove it) |
+| Rename, hide or pin a sensor to the overlay | Right-click the sensor |
 
-Todos los atajos, el overlay, la fuente de FPS, la carpeta de registros y demás opciones se cambian en **⚙ Ajustes**.
+All hotkeys, the overlay, the FPS source, the log folder and other options are in **⚙ Settings**.
 
-- El overlay funciona en juegos **en ventana o en pantalla completa sin bordes**. En pantalla completa *exclusiva*, Windows no deja pintar encima.
-- Los registros se guardan como `Juego_fecha_hora.csv` (columnas `Date`, `Time` y `Sensor [unidad]`) junto a un `…_resumen.txt`.
-- Los ajustes se guardan en `%AppData%\MandanHeat\settings.json`.
+- The overlay works on games in **windowed or borderless fullscreen** mode. In *exclusive* fullscreen, Windows does not allow drawing on top.
+- Logs are saved as `Game_date_time.csv` (columns `Date`, `Time` and `Sensor [unit]`) together with a `…_summary.txt`.
+- Settings are stored in `%AppData%\MandanHeat\settings.json`.
 
-## Solución de problemas
+## Troubleshooting
 
-- **No aparecen la temperatura de la CPU ni los sensores de la placa**: comprueba que PawnIO está instalado
-  y que la app se ejecuta como administrador.
-- **No aparecen los ventiladores de la placa**: otro programa de monitorización (NZXT CAM, MSI Center, iCUE…)
-  puede tener ocupado el chip. Ciérralo y pulsa «Reintentar» en el aviso.
-- **Ajustes → Exportar informe de sensores** genera un archivo con todos los sensores detectados.
-  Adjúntalo si abres una *issue*.
+- **CPU temperature and motherboard sensors are missing**: check that PawnIO is installed
+  and that the app runs as administrator.
+- **Motherboard fans are missing**: another monitoring program (NZXT CAM, MSI Center, iCUE…)
+  may be holding the chip. Close it and click "Retry" in the notice.
+- **Settings → Export sensor report** generates a file with every detected sensor.
+  Attach it if you open an *issue*.
 
-## Compilar desde el código
+## Building from source
 
-Requiere el [SDK de .NET 10](https://dotnet.microsoft.com/download).
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```powershell
-# Ejecutar en desarrollo
+# Run in development
 dotnet run --project src\MandanHeat
 
-# Generar el ejecutable único (release\MandanHeat.exe y el .zip)
+# Build the single-file executable (release\MandanHeat.exe and the .zip)
 powershell -ExecutionPolicy Bypass -File .\publicar.ps1
 
-# Publicar una versión nueva: GitHub Actions compila y crea la Release solo
-powershell -ExecutionPolicy Bypass -File .
-ueva-version.ps1 -Version 1.2.0
+# Publish a new version: GitHub Actions builds it and creates the Release automatically
+powershell -ExecutionPolicy Bypass -File .\nueva-version.ps1 -Version 1.2.0
 ```
 
-Tecnología: C# / WPF (.NET 10), [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
-para los sensores y [PresentMon](https://github.com/GameTechDev/PresentMon) para los FPS. PresentMon usa ETW: no inyecta nada en el juego y es seguro con los sistemas antitrampas.
+Built with C# / WPF (.NET 10), [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
+for sensors and [PresentMon](https://github.com/GameTechDev/PresentMon) for FPS. PresentMon uses ETW: it does not inject
+anything into the game and is safe with anti-cheat systems.
 
-## Licencia
+## Contributing
 
-[MIT](LICENSE). Las licencias de los componentes de terceros están en [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Bug reports, sensor reports from hardware we haven't tested, and pull requests are welcome.
+If MandanHeat is useful to you, a ⭐ helps other people find it.
+
+## License
+
+[MIT](LICENSE). Third-party component licenses are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+<sub>Keywords: PC hardware monitor, CPU temperature monitor, GPU temperature, FPS counter, frametime, 1% low, gaming overlay,
+MSI Afterburner alternative, HWiNFO alternative, HWMonitor alternative, LibreHardwareMonitor, PresentMon, Windows, WPF, .NET.</sub>
