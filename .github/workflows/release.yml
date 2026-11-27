@@ -1,6 +1,6 @@
 name: Release
 
-# Al subir una etiqueta vX.Y.Z se compila el ejecutable único y se publica la Release.
+# Al subir una etiqueta vX.Y.Z se compila la carpeta de la app y se publica la Release.
 # "Run workflow" (manual) sin versión solo compila y deja el zip como artefacto.
 # Con una versión (X.Y.Z) también crea la etiqueta vX.Y.Z y publica la Release.
 on:
@@ -36,7 +36,7 @@ jobs:
           else { $v = '0.0.0' }
           "VERSION=$v" >> $env:GITHUB_ENV
 
-      - name: Compilar ejecutable único
+      - name: Compilar carpeta de la app
         shell: pwsh
         run: ./publicar.ps1 -Version $env:VERSION
 

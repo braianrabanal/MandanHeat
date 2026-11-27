@@ -21,14 +21,15 @@ public sealed record UpdateInfo(Version Version, string PageUrl, string ZipUrl, 
 
 /// <summary>
 /// Actualización automática desde las Releases de GitHub.
-/// Descarga el zip de la última Release, sustituye el ejecutable (Windows permite renombrar un .exe en uso)
-/// y reinicia la app. Solo funciona con el ejecutable único que publica GitHub Actions.
+/// Descarga el zip de la última Release, sustituye los archivos de la carpeta de la app (Windows permite
+/// renombrar un .exe o .dll en uso) y reinicia la app. Solo funciona con la carpeta que publica GitHub Actions.
 /// </summary>
 internal static class Updater
 {
     private const string Repo = "braianrabanal/MandanHeat";
     private const string AssetName = "MandanHeat-win-x64.zip";
     private const string ExeName = "MandanHeat.exe";
+    private const string OldSuffix = ".old";
     public const string UpdatedArg = "--updated";
 
     public static string ReleasesPage => $"https://github.com/{Repo}/releases/latest";
@@ -37,12 +38,12 @@ internal static class Updater
 
     public static string CurrentVersionText => CurrentVersion.ToString(3);
 
-    /// <summary>
-    /// true con el ejecutable único (publicar.ps1). Con una compilación normal (MandanHeat.exe + .dll)
-    /// sustituir solo el .exe la rompería, así que no se actualiza.
-    /// </summary>
+    /// <summary>Archivo que publicar.ps1 incluye en la carpeta publicada; una compilación de desarrollo no lo tiene.</summary>
+    private const string ReleaseMarker = "MandanHeat.release";
+
+    /// <summary>true si la app se ejecuta desde la carpeta descargada de las Releases (no desde una compilación de desarrollo).</summary>
     public static bool CanSelfUpdate =>
-        !string.IsNullOrEmpty(Environment.ProcessPath) && !File.Exists(Path.Combine(AppContext.BaseDirectory, "MandanHeat.dll"));
+        !string.IsNullOrEmpty(Environment.ProcessPath) && File.Exists(Path.Combine(AppContext.BaseDirectory, ReleaseMarker));
 
     private static Version Normalize(Version v) => new(v.Major, v.Minor, Math.Max(v.Build, 0));
 
@@ -86,13 +87,13 @@ internal static class Updater
         return null;
     }
 
-    /// <summary>Descarga la versión nueva y sustituye el ejecutable. Hay que llamar después a <see cref="Restart"/>.</summary>
+    /// <summary>Descarga la versión nueva y sustituye los archivos de la app. Hay que llamar después a <see cref="Restart"/>.</summary>
     public static async Task InstallAsync(UpdateInfo info, IProgress<double>? progress, CancellationToken ct)
     {
-        var exe = Environment.ProcessPath!;
-        var newExe = exe + ".new";
-        var oldExe = exe + ".old";
+        var appDir = Path.GetFullPath(AppContext.BaseDirectory);
         var zipPath = Path.Combine(Path.GetTempPath(), $"MandanHeat-{info.VersionText}.zip");
+        var stage = Path.Combine(Path.GetTempPath(), $"MandanHeat-{info.VersionText}-update");
+        var applied = new List<(string Target, bool HadOld)>();
 
         try
         {
@@ -122,35 +123,64 @@ internal static class Updater
                     throw new InvalidDataException(Loc.T("La descarga está dañada (la suma de comprobación no coincide)."));
             }
 
+            // Se extrae todo a una carpeta temporal; el zip puede llevar los archivos en una carpeta raíz ("MandanHeat/").
+            if (Directory.Exists(stage)) Directory.Delete(stage, recursive: true);
+            Directory.CreateDirectory(stage);
+            var stageFull = Path.GetFullPath(stage) + Path.DirectorySeparatorChar;
             using (var zip = ZipFile.OpenRead(zipPath))
             {
-                var entry = zip.Entries.FirstOrDefault(e => e.Name.Equals(ExeName, StringComparison.OrdinalIgnoreCase))
-                            ?? throw new InvalidDataException(Loc.F("El zip no contiene {0}.", ExeName));
-                entry.ExtractToFile(newExe, overwrite: true);
+                var exeEntry = zip.Entries.FirstOrDefault(e => e.Name.Equals(ExeName, StringComparison.OrdinalIgnoreCase))
+                               ?? throw new InvalidDataException(Loc.F("El zip no contiene {0}.", ExeName));
+                var prefix = exeEntry.FullName[..^exeEntry.Name.Length];
+                foreach (var entry in zip.Entries)
+                {
+                    if (entry.Name.Length == 0 || !entry.FullName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    var dest = Path.GetFullPath(Path.Combine(stage, entry.FullName[prefix.Length..]));
+                    if (!dest.StartsWith(stageFull, StringComparison.OrdinalIgnoreCase)) continue; // ruta sospechosa
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    entry.ExtractToFile(dest, overwrite: true);
+                }
             }
 
+            var newExe = Path.Combine(stage, ExeName);
             var fvi = FileVersionInfo.GetVersionInfo(newExe);
             var newVersion = new Version(fvi.FileMajorPart, fvi.FileMinorPart, fvi.FileBuildPart);
             if (fvi.ProductName != "MandanHeat" || newVersion != info.Version)
                 throw new InvalidDataException(Loc.F("El ejecutable descargado no es MandanHeat {0}.", info.VersionText));
 
             ct.ThrowIfCancellationRequested();
-            // El .exe en uso no se puede sobrescribir, pero sí renombrar: se aparta y se pone el nuevo en su sitio.
-            File.Move(exe, oldExe, overwrite: true);
+            // Un .exe o .dll en uso no se puede sobrescribir, pero sí renombrar: se aparta cada archivo
+            // antiguo (.old) y se pone el nuevo en su sitio. Si algo falla, se deshace todo.
             try
             {
-                File.Move(newExe, exe);
+                foreach (var file in Directory.EnumerateFiles(stage, "*", SearchOption.AllDirectories))
+                {
+                    var target = Path.Combine(appDir, Path.GetRelativePath(stage, file));
+                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                    bool hadOld = File.Exists(target);
+                    if (hadOld) File.Move(target, target + OldSuffix, overwrite: true);
+                    applied.Add((target, hadOld));
+                    File.Move(file, target, overwrite: true);
+                }
             }
             catch
             {
-                File.Move(oldExe, exe);
+                foreach (var (target, hadOld) in Enumerable.Reverse(applied))
+                {
+                    try
+                    {
+                        if (File.Exists(target)) File.Delete(target);
+                        if (hadOld) File.Move(target + OldSuffix, target, overwrite: true);
+                    }
+                    catch { }
+                }
                 throw;
             }
         }
         finally
         {
             TryDelete(zipPath);
-            TryDelete(newExe);
+            try { if (Directory.Exists(stage)) Directory.Delete(stage, recursive: true); } catch { }
         }
     }
 
@@ -164,20 +194,25 @@ internal static class Updater
         Process.Start(psi);
     }
 
-    /// <summary>Borra el ejecutable anterior que deja una actualización (cuando ese proceso ya ha terminado).</summary>
+    /// <summary>Borra los archivos antiguos (.old) que deja una actualización, cuando el proceso anterior ya ha terminado.</summary>
     public static void CleanupLeftovers()
     {
-        if (string.IsNullOrEmpty(Environment.ProcessPath)) return;
-        var files = new List<string> { Environment.ProcessPath + ".old", Environment.ProcessPath + ".new" };
-        if (!files.Any(File.Exists)) return;
+        var dir = AppContext.BaseDirectory;
+        if (!Directory.Exists(dir) || !HasLeftovers(dir)) return;
         Task.Run(async () =>
         {
-            for (int i = 0; i < 10 && files.Any(File.Exists); i++)
+            for (int i = 0; i < 10 && HasLeftovers(dir); i++)
             {
-                files.ForEach(TryDelete);
+                try { foreach (var f in Directory.EnumerateFiles(dir, "*" + OldSuffix, SearchOption.AllDirectories)) TryDelete(f); } catch { }
                 await Task.Delay(2000);
             }
         });
+    }
+
+    private static bool HasLeftovers(string dir)
+    {
+        try { return Directory.EnumerateFiles(dir, "*" + OldSuffix, SearchOption.AllDirectories).Any(); }
+        catch { return false; }
     }
 
     private static void TryDelete(string path)

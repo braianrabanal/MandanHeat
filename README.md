@@ -25,7 +25,7 @@
 
 MandanHeat is a lightweight, open-source alternative to MSI Afterburner / RTSS, HWiNFO and HWMonitor for people who want
 one small app to **monitor PC temperatures, check game FPS and frametime, show an overlay while gaming, and log everything
-to a file** for benchmarking or troubleshooting. Single portable `.exe`, no installer, no .NET runtime needed.
+to a file** for benchmarking or troubleshooting. Portable: just unzip and run, no installer and no .NET runtime needed.
 
 ## Features
 
@@ -60,8 +60,9 @@ to a file** for benchmarking or troubleshooting. Single portable `.exe`, no inst
 
 ## Installation
 
-1. Download `MandanHeat-win-x64.zip` from **[Releases](../../releases/latest)** and unzip it anywhere.
-   It is a single `MandanHeat.exe`: nothing else to install, not even .NET.
+1. Download `MandanHeat-win-x64.zip` from **[Releases](../../releases/latest)** and unzip it anywhere
+   (for example `C:\Tools`). You get a `MandanHeat` folder: keep its files together and run `MandanHeat.exe` from inside it.
+   Nothing else to install, not even .NET.
 2. **Install the PawnIO driver.** It is required to read the CPU temperature and the motherboard sensors. Open PowerShell and run:
    ```powershell
    winget install namazso.PawnIO
@@ -72,6 +73,9 @@ to a file** for benchmarking or troubleshooting. Single portable `.exe`, no inst
 
 > **Windows SmartScreen warning:** since the app is not digitally signed, Windows may show
 > "Windows protected your PC". Click **More info → Run anyway**.
+>
+> **Smart App Control (Windows 11):** if it is turned on, it blocks unsigned apps and offers no "run anyway" button.
+> Turn it off in **Windows Security → App & browser control → Smart App Control settings**, then run the app again.
 
 ## Usage
 
@@ -108,7 +112,7 @@ Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 # Run in development
 dotnet run --project src\MandanHeat
 
-# Build the single-file executable (release\MandanHeat.exe and the .zip)
+# Build the portable folder (release\MandanHeat\ and the .zip)
 powershell -ExecutionPolicy Bypass -File .\publicar.ps1
 
 # Publish a new version: GitHub Actions builds it and creates the Release automatically

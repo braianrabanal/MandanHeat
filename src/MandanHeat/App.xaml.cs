@@ -146,7 +146,7 @@ public partial class App : Application
     private static void RunUpdateTest(string path)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Versión actual: {Updater.CurrentVersionText}   Ejecutable único: {Updater.CanSelfUpdate}");
+        sb.AppendLine($"Versión actual: {Updater.CurrentVersionText}   Instalación publicada: {Updater.CanSelfUpdate}");
         try
         {
             // En un hilo aparte: esperar aquí de forma síncrona bloquearía el hilo de la interfaz.
